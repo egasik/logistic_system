@@ -241,6 +241,9 @@ body {
 .table {
   border-radius: 8px;
   overflow: hidden;
+  width: 100%;
+  max-width: 100%;
+  table-layout: auto;
 }
 
 .table thead {
@@ -250,6 +253,31 @@ body {
 
 .table-hover tbody tr:hover {
   background-color: rgba(158, 47, 31, 0.05);
+}
+
+/* Ограничиваем максимальную ширину таблиц в карточках */
+.card .table {
+  margin-bottom: 0;
+}
+
+/* Адаптивная обёртка для таблиц на мобильных */
+.table-responsive {
+  border-radius: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Улучшаем читаемость ячеек таблицы */
+.table th, .table td {
+  vertical-align: middle;
+  padding: 0.75rem 1rem;
+  white-space: nowrap;
+}
+
+/* Перенос текста в ячейках если контент длинный */
+.table td:not(:first-child):not(:last-child) {
+  white-space: normal;
+  max-width: 200px;
 }
 
 /* ============================================
