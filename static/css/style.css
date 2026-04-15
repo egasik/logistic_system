@@ -244,6 +244,7 @@ body {
   width: 100%;
   max-width: 100%;
   table-layout: auto;
+  font-size: 0.9rem;
 }
 
 .table thead {
@@ -251,13 +252,27 @@ body {
   color: white;
 }
 
+.table thead th {
+  padding: 0.6rem 0.8rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
 .table-hover tbody tr:hover {
   background-color: rgba(158, 47, 31, 0.05);
+}
+
+.table tbody td {
+  padding: 0.5rem 0.8rem;
+  vertical-align: middle;
+  font-size: 0.85rem;
 }
 
 /* Ограничиваем максимальную ширину таблиц в карточках */
 .card .table {
   margin-bottom: 0;
+  width: 100%;
 }
 
 /* Адаптивная обёртка для таблиц на мобильных */
@@ -265,19 +280,33 @@ body {
   border-radius: 8px;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  max-height: 400px;
+  overflow-y: auto;
 }
 
 /* Улучшаем читаемость ячеек таблицы */
 .table th, .table td {
   vertical-align: middle;
-  padding: 0.75rem 1rem;
+  padding: 0.5rem 0.75rem;
   white-space: nowrap;
 }
 
 /* Перенос текста в ячейках если контент длинный */
 .table td:not(:first-child):not(:last-child) {
   white-space: normal;
-  max-width: 200px;
+  max-width: 150px;
+  word-wrap: break-word;
+}
+
+/* Компактные таблицы в сайдбаре */
+.sidebar .table th,
+.sidebar .table td {
+  padding: 0.4rem 0.6rem;
+  font-size: 0.8rem;
+}
+
+.sidebar .table-responsive {
+  max-height: 300px;
 }
 
 /* ============================================
