@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}Корзина{% endblock %}
+
+{% block content %}
+<h2>🛒 Ваша корзина</h2>
+
+{% if cart|length > 0 %}
+<div class="card mt-3">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Товар</th>
+                        <th class="text-center">Цена</th>
+                        <th class="text-center">Кол-во</th>
+                        <th class="text-end">Сумма</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in cart %}
+                    <tr>
+                        <td>
+                            <strong>{{ item.product.name }}</strong><br>
+                            <small class="text-muted">{{ item.product.category.name|default:"Без категории" }}</small>
+                        </td>
+                        <td class="text-center">{{ item.price|floatformat:2 }} ₽</td>
+                        <td class="text-center">
+                            <form method="post" action="{% url 'cart_update' item.product.id %}" class="d-flex align-items-center justify-content-center">
+                                {% csrf_token %}
+                                <input type="number" name="quantity" value="{{ item.quantity }}" min="1" class="form-control form-control-sm" style="width: 70px;">
+                                <button type="submit" class="btn btn-sm btn-outline-secondary ms-2" title="Обновить">↺</button>
+                            </form>
+                        </td>
+                        <td class="text-end"><strong>{{ item.total_price|floatformat:2 }} ₽</strong></td>
+                        <td class="text-end">
+                            <a href="{% url 'cart_remove' item.product.id %}" class="btn btn-sm btn-outline-danger" title="Удалить">✕</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="table-active">
+                        <td colspan="3" class="text-end"><h5 class="mb-0">Итого:</h5></td>
+                        <td class="text-end"><h4 class="mb-0 text-success">{{ cart.get_total_price|floatformat:2 }} ₽</h4></td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        <div class="d-flex justify-content-end mt-3">
+            <a href="{% url 'catalog' %}" class="btn btn-outline-secondary me-2">← Продолжить покупки</a>
+            <a href="{% url 'checkout' %}" class="btn btn-success btn-lg">Оформить заказ</a>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info mt-3 text-center">
+    <h5>Корзина пуста</h5>
+    <p class="mb-3">Добавьте товары из каталога, чтобы оформить заказ.</p>
+    <a href="{% url 'catalog' %}" class="btn btn-primary">Перейти в каталог</a>
+</div>
+{% endif %}
+{% endblock %}

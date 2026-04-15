@@ -1,0 +1,37 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block admin_content %}
+<div class="card border-danger">
+    <div class="card-header bg-danger text-white">
+        <h5 class="mb-0">⚠️ Удаление заказа #{{ order.id }}</h5>
+    </div>
+    <div class="card-body">
+        <p>Вы действительно хотите удалить заказ <strong>#{{ order.id }}</strong>?</p>
+        
+        <div class="alert alert-info">
+            <strong>Информация о заказе:</strong><br>
+            Клиент: {{ order.client.first_name|default:"Гость" }} {{ order.client.last_name|default:"" }}<br>
+            Сумма: {{ order.total_amount }} ₽<br>
+            Статус: {{ order.get_status_display }}<br>
+            Дата: {{ order.created_at|date:"d.m.Y H:i" }}
+        </div>
+        
+        {% if order.status in 'delivered,shipped' %}
+        <div class="alert alert-warning">
+            <strong>Внимание!</strong> Нельзя удалить доставленные или отгруженные заказы. 
+            Сначала измените статус на "Отменен".
+        </div>
+        {% endif %}
+        
+        <form method="post">
+            {% csrf_token %}
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-danger" {% if order.status in 'delivered,shipped' %}disabled{% endif %}>
+                    Да, удалить
+                </button>
+                <a href="{% url 'admin_order_detail' order.id %}" class="btn btn-outline-secondary">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

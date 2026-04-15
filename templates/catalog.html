@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block title %}Каталог товаров{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Боковая панель с категориями -->
+    <div class="col-md-3">
+        <div class="card mb-3">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">📂 Категории</h5>
+            </div>
+            <div class="list-group list-group-flush">
+                <a href="{% url 'catalog' %}" class="list-group-item list-group-item-action {% if not request.GET.category %}active{% endif %}">
+                    Все товары
+                </a>
+                {% for cat in categories %}
+                <a href="?category={{ cat.id }}" class="list-group-item list-group-item-action {% if request.GET.category == cat.id|stringformat:"s" %}active{% endif %}">
+                    {{ cat.name }}
+                    <span class="badge bg-secondary float-end">{{ cat.products.count }}</span>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Фильтр по статусу -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">🔍 Фильтр</h5>
+            </div>
+            <div class="card-body">
+                <form method="get">
+                    {% if request.GET.category %}
+                    <input type="hidden" name="category" value="{{ request.GET.category }}">
+                    {% endif %}
+                    <select name="status" class="form-select mb-2" onchange="this.form.submit()">
+                        <option value="">Все статусы</option>
+                        <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>В наличии</option>
+                        <option value="out_of_stock" {% if request.GET.status == 'out_of_stock' %}selected{% endif %}>Нет в наличии</option>
+                    </select>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Список товаров -->
+    <div class="col-md-9">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Каталог товаров</h2>
+            <form class="d-flex" role="search" method="get">
+                <input class="form-control me-2" type="search" name="search" placeholder="Поиск товара..." value="{{ request.GET.search }}">
+                <button class="btn btn-outline-success" type="submit">Найти</button>
+            </form>
+        </div>
+
+        <div class="row">
+            {% for product in products %}
+            <div class="col-md-4 col-sm-6 mb-4">
+                <div class="card h-100 shadow-sm">
+                    {% if product.image %}
+                    <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}" 
+                        style="height: 200px; object-fit: cover; object-position: center;">
+                {% else %}
+                    <img src="https://via.placeholder.com/300x200?text=No+Image" class="card-img-top" alt="Нет фото"
+                        style="height: 200px; object-fit: cover;">
+                {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">{{ product.name }}</h5>
+                        <p class="card-text text-muted small">
+                            📂 {{ product.category.name|default:"Без категории" }}
+                        </p>
+                        <p class="card-text text-truncate">{{ product.description }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+    <span class="h5 mb-0 text-primary">{{ product.price }} ₽</span>
+    {% if product.stock.quantity > 0 %}
+        <span class="badge bg-success">В наличии</span>
+    {% else %}
+        <span class="badge bg-danger">Нет</span>
+    {% endif %}
+</div>
+<div class="mt-2 d-grid gap-2">
+    <a href="{% url 'product_detail' product.id %}" class="btn btn-outline-primary btn-sm">Подробнее</a>
+    <!-- Быстрое добавление (если есть на складе) -->
+    {% if product.stock.quantity > 0 %}
+    <form method="post" action="{% url 'cart_add' product.id %}" class="d-inline">
+        {% csrf_token %}
+        <input type="hidden" name="quantity" value="1">
+        <button type="submit" class="btn btn-success btn-sm w-100">
+            <i class="bi bi-cart-plus"></i> В корзину
+        </button>
+    </form>
+    {% endif %}
+</div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+                <div class="col-12 text-center">
+                    <p class="text-muted">Товары не найдены.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

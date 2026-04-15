@@ -1,0 +1,280 @@
+{% load cart_extras %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Товарная накладная № {{ order.id }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 15mm;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 12pt;
+            line-height: 1.4;
+            color: #000;
+        }
+        
+        .invoice-header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 15px;
+        }
+        
+        .invoice-header h1 {
+            font-size: 18pt;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        
+        .invoice-number {
+            font-size: 14pt;
+            margin-bottom: 5px;
+        }
+        
+        .invoice-date {
+            font-size: 11pt;
+            color: #333;
+        }
+        
+        .parties {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+        
+        .party {
+            width: 48%;
+            border: 1px solid #000;
+            padding: 10px;
+        }
+        
+        .party-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            text-align: center;
+            border-bottom: 1px solid #000;
+            padding-bottom: 5px;
+        }
+        
+        .party-info p {
+            margin-bottom: 5px;
+            font-size: 11pt;
+        }
+        
+        .table-section {
+            margin-bottom: 30px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        th, td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: left;
+        }
+        
+        th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        td.number {
+            text-align: right;
+        }
+        
+        td.center {
+            text-align: center;
+        }
+        
+        .total-row {
+            font-weight: bold;
+            background-color: #f9f9f9;
+        }
+        
+        .signatures {
+            margin-top: 50px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .signature-block {
+            width: 45%;
+        }
+        
+        .signature-line {
+            margin-top: 40px;
+            border-top: 1px solid #000;
+            padding-top: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .footer-info {
+            margin-top: 30px;
+            font-size: 10pt;
+            color: #666;
+            text-align: center;
+            border-top: 1px solid #ccc;
+            padding-top: 10px;
+        }
+        
+        .stamp {
+            margin-top: 20px;
+            font-size: 10pt;
+            color: #666;
+        }
+        
+        @media print {
+            .no-print {
+                display: none;
+            }
+            
+            body {
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print" style="text-align: right; margin-bottom: 20px; padding: 10px; background: #f5f5f5; border-radius: 5px;">
+        <button onclick="window.print()" style="padding: 10px 20px; font-size: 14px; cursor: pointer; margin-right: 10px; background: #4CAF50; color: white; border: none; border-radius: 4px;">
+            🖨️ Печать / Сохранить в PDF
+        </button>
+        <a href="{% url 'admin_order_detail' order.id %}" style="padding: 10px 20px; font-size: 14px; text-decoration: none; background: #2196F3; color: white; border-radius: 4px; display: inline-block;">
+            ← Назад к заказу
+        </a>
+    </div>
+
+    <div class="invoice-header">
+        <h1>Товарная накладная</h1>
+        <div class="invoice-number">№ {{ order.id }} от {{ invoice_date }}</div>
+        <div class="invoice-date">Время формирования: {{ invoice_time }} (MSK+5)</div>
+    </div>
+
+    <div class="parties">
+        <div class="party">
+            <div class="party-title">Поставщик (Продавец)</div>
+            <div class="party-info">
+                <p><strong>LogisticsPro</strong></p>
+                <p>ИНН: 3801234567</p>
+                <p>КПП: 380101001</p>
+                <p>Адрес: г. Иркутск, ул. Логистическая, 1</p>
+                <p>Тел.: +7 (999) 123-45-67</p>
+                <p>Email: info@logisticspro.ru</p>
+            </div>
+        </div>
+        
+        <div class="party">
+            <div class="party-title">Покупатель (Заказчик)</div>
+            <div class="party-info">
+                <p><strong>{{ order.client.first_name }} {{ order.client.last_name|default:"" }}</strong></p>
+                <p>Заказ № {{ order.id }}</p>
+                <p>Дата заказа: {{ order.created_at|date:"d.m.Y H:i" }}</p>
+                <p>Телефон: {{ order.phone }}</p>
+                <p>Email: {{ order.email }}</p>
+                <p>Адрес доставки: {{ order.delivery_address }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-section">
+        <h3 style="margin-bottom: 10px;">Товары:</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 5%;">№</th>
+                    <th style="width: 40%;">Наименование товара</th>
+                    <th style="width: 10%;">Ед. изм.</th>
+                    <th style="width: 10%;">Кол-во</th>
+                    <th style="width: 15%;">Цена за ед., ₽</th>
+                    <th style="width: 20%;">Сумма, ₽</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in order.items.all %}
+                <tr>
+                    <td class="center">{{ forloop.counter }}</td>
+                    <td>{{ item.product.name|default:"Товар удалён" }}</td>
+                    <td class="center">шт.</td>
+                    <td class="number">{{ item.quantity }}</td>
+                    <td class="number">{{ item.price|floatformat:2 }}</td>
+                    <td class="number">{{ item.quantity|multiply:item.price|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr class="total-row">
+                    <td colspan="5" style="text-align: right;">ИТОГО:</td>
+                    <td class="number"><strong>{{ order.total_amount|floatformat:2 }}</strong></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+        <p><strong>Всего наименований:</strong> {{ order.items.count }}</p>
+        <p><strong>Общее количество:</strong> {{ order.items|length }}</p>
+        <p><strong>Общая сумма:</strong> <strong>{{ order.total_amount|floatformat:2 }} ({{ order.total_amount|floatformat:0 }}) рублей 00 копеек</strong></p>
+        {% if order.comment %}
+        <p><strong>Комментарий к заказу:</strong> {{ order.comment }}</p>
+        {% endif %}
+    </div>
+
+    <div class="signatures">
+        <div class="signature-block">
+            <p><strong>Отпустил (Продавец):</strong></p>
+            <div class="signature-line">
+                <span>_________________</span>
+                <span>/ _________________ /</span>
+                <span>{{ invoice_date }}</span>
+            </div>
+            <p style="font-size: 10pt; margin-top: 5px; color: #666;">(подпись) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (расшифровка)</p>
+        </div>
+        
+        <div class="signature-block">
+            <p><strong>Принял (Покупатель):</strong></p>
+            <div class="signature-line">
+                <span>_________________</span>
+                <span>/ _________________ /</span>
+                <span>{{ invoice_date }}</span>
+            </div>
+            <p style="font-size: 10pt; margin-top: 5px; color: #666;">(подпись) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (расшифровка)</p>
+        </div>
+    </div>
+
+    <div class="stamp">
+        <p style="text-align: center; margin-top: 30px;">
+            <strong>М.П.</strong>
+        </p>
+    </div>
+
+    <div class="footer-info">
+        <p>Документ сформирован автоматически системой LogisticsPro</p>
+        <p>Время формирования: {{ invoice_date }} {{ invoice_time }} (часовой пояс MSK+5 / UTC+5)</p>
+        <p>Заказ создан: {{ order.created_at|date:"d.m.Y H:i:s" }} | Статус: {{ order.get_status_display }}</p>
+    </div>
+
+    <script>
+        // Автоматическая печать при загрузке (опционально)
+        // window.onload = function() { window.print(); }
+    </script>
+</body>
+</html>

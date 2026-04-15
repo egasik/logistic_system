@@ -1,0 +1,454 @@
+/* ============================================
+   ЛогистикаShop - Корпоративный стиль
+   ============================================ */
+
+/* Подключение шрифтов Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap');
+
+:root {
+  /* Palette Colors */
+  --color-1: #9E2F1F;
+  --color-2: #ECD7A1;
+  --color-3: #602917;
+  --color-4: #F3F8FC;
+  --color-5: #392012;
+
+  /* Banner Colors */
+  --banner-bg: #f3f8fcee;
+  --banner-text: #392012;
+  --banner-border: rgba(158, 47, 31, 0.3);
+
+  /* Main Background */
+  --main-bg: #f3f8fc;
+
+  /* Header Colors */
+  --header-bg: linear-gradient(135deg, #9e2f1f 0%, #7e2e1c 50%, #602917 100%);
+  --header-border: rgba(158, 47, 31, 0.3);
+  --header-badge-bg: rgba(243, 248, 252, 0.3);
+  --header-badge-text: #392012;
+  --header-title-text: #f3f8fc;
+  --header-desc-text: #f3f8fc;
+
+  /* UI Colors */
+  --primary-bg: #9e2f1f;
+  --primary-hover: #7e2e1c;
+  --secondary-bg: #ecd7a1;
+  --secondary-hover: #d4c08a;
+  --text-dark: #392012;
+  --text-medium: #602917;
+  --bg-light: #f3f8fc;
+  --border-color: rgba(158, 47, 31, 0.2);
+  
+  /* Success/Warning/Error */
+  --success-bg: #28a745;
+  --warning-bg: #ffc107;
+  --error-bg: #dc3545;
+}
+
+/* ============================================
+   Базовые стили
+   ============================================ */
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--main-bg);
+  color: var(--text-dark);
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6, .navbar-brand {
+  font-family: 'Playfair Display', serif;
+  font-weight: 600;
+}
+
+/* ============================================
+   Навигация (Header) - Исправлено
+   ============================================ */
+
+.navbar {
+  background: var(--header-bg) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 0 4px 20px rgba(96, 41, 23, 0.15);
+  padding: 0.6rem 0; /* ← Уменьшили высоту */
+  min-height: 60px;
+}
+
+.navbar-brand {
+  font-size: 1.5rem; /* ← Чуть меньше шрифт */
+  font-weight: 700;
+  color: var(--header-title-text) !important;
+  letter-spacing: 1px;
+  padding: 0;
+}
+
+.navbar-brand span {
+  color: var(--color-2);
+  font-weight: 400;
+}
+
+/* Чтобы контент не прятался под фиксированной шапкой */
+body {
+  padding-top: 70px; /* Отступ сверху равен высоте шапки */
+}
+
+.nav-link {
+  color: rgba(255,255,255,0.85) !important;
+  font-weight: 500;
+  font-size: 0.95rem;
+  margin: 0 0.8rem;
+  padding: 0.5rem 0;
+  transition: color 0.3s ease;
+}
+
+.nav-link:hover, .nav-link.active {
+  color: var(--color-2) !important;
+}
+
+/* ============================================
+   Карточки товаров
+   ============================================ */
+
+.card {
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(158, 47, 31, 0.1);
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(158, 47, 31, 0.2);
+}
+
+.card-header {
+  background: linear-gradient(135deg, var(--color-1), var(--color-3));
+  color: var(--header-title-text);
+  font-family: 'Playfair Display', serif;
+  font-weight: 600;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.card-title {
+  color: var(--text-dark);
+  font-family: 'Playfair Display', serif;
+  font-weight: 600;
+}
+
+/* ============================================
+   Кнопки
+   ============================================ */
+
+.btn-primary {
+  background-color: var(--primary-bg);
+  border-color: var(--primary-bg);
+  color: white;
+  font-weight: 500;
+  padding: 0.6rem 1.5rem;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+  border-color: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(158, 47, 31, 0.3);
+}
+
+.btn-success {
+  background-color: var(--secondary-bg);
+  border-color: var(--secondary-bg);
+  color: var(--text-dark);
+  font-weight: 600;
+  padding: 0.6rem 1.5rem;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.btn-success:hover {
+  background-color: var(--secondary-hover);
+  border-color: var(--secondary-hover);
+  color: var(--text-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(236, 215, 161, 0.3);
+}
+
+.btn-outline-primary {
+  color: var(--primary-bg);
+  border-color: var(--primary-bg);
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--primary-bg);
+  border-color: var(--primary-bg);
+  color: white;
+}
+
+/* ============================================
+   Бейджи и метки
+   ============================================ */
+
+.badge {
+  font-weight: 500;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+}
+
+.badge.bg-primary {
+  background-color: var(--primary-bg) !important;
+}
+
+.badge.bg-success {
+  background-color: var(--success-bg) !important;
+}
+
+.badge.bg-danger {
+  background-color: var(--error-bg) !important;
+}
+
+.badge.bg-warning {
+  background-color: var(--warning-bg) !important;
+  color: var(--text-dark);
+}
+
+/* ============================================
+   Формы
+   ============================================ */
+
+.form-control, .form-select {
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.7rem 1rem;
+  transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: var(--primary-bg);
+  box-shadow: 0 0 0 0.2rem rgba(158, 47, 31, 0.25);
+}
+
+.form-label {
+  font-weight: 500;
+  color: var(--text-medium);
+  margin-bottom: 0.5rem;
+}
+
+/* ============================================
+   Таблицы
+   ============================================ */
+
+.table {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.table thead {
+  background: linear-gradient(135deg, var(--color-1), var(--color-3));
+  color: white;
+}
+
+.table-hover tbody tr:hover {
+  background-color: rgba(158, 47, 31, 0.05);
+}
+
+/* ============================================
+   Footer
+   ============================================ */
+
+footer {
+  background: linear-gradient(135deg, var(--color-3), var(--color-5));
+  color: var(--header-title-text);
+  border-top: 2px solid var(--border-color);
+  padding: 2rem 0;
+  margin-top: 4rem;
+}
+
+footer a {
+  color: var(--color-2);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+footer a:hover {
+  color: white;
+}
+
+/* ============================================
+   Утилиты
+   ============================================ */
+
+.text-primary-custom {
+  color: var(--primary-bg) !important;
+}
+
+.bg-primary-custom {
+  background-color: var(--primary-bg) !important;
+}
+
+.bg-secondary-custom {
+  background-color: var(--secondary-bg) !important;
+}
+
+.border-primary-custom {
+  border-color: var(--primary-bg) !important;
+}
+
+/* Анимации */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.card {
+  animation: fadeIn 0.6s ease-out;
+}
+
+/* ============================================
+   Адаптивность
+   ============================================ */
+
+@media (max-width: 768px) {
+  .navbar-brand {
+    font-size: 1.4rem;
+  }
+  
+  .card {
+    margin-bottom: 1rem;
+  }
+}
+/* ============================================
+   Левая панель (Категории и Фильтры)
+   ============================================ */
+
+/* Карточки в сайдбаре */
+.card {
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(96, 41, 23, 0.05);
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+
+.card-header {
+  background: linear-gradient(135deg, var(--color-3), var(--color-1));
+  color: #fff;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem;
+  padding: 0.8rem 1rem;
+  border-bottom: none;
+}
+
+/* Список категорий */
+.list-group-item {
+  border: none;
+  border-bottom: 1px solid #f0f0f0;
+  color: var(--text-dark);
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+
+.list-group-item:last-child {
+  border-bottom: none;
+}
+
+.list-group-item:hover {
+  background-color: rgba(236, 215, 161, 0.3); /* Золотистый при наведении */
+  color: var(--color-3);
+  padding-left: 1.2rem; /* Эффект сдвига */
+}
+
+/* Активная категория (синюю меняем на бордовую) */
+.list-group-item.active {
+  background-color: var(--color-1);
+  border-color: var(--color-1);
+  color: white;
+  font-weight: 600;
+}
+
+.list-group-item.active:hover {
+  background-color: var(--primary-hover);
+  color: white;
+  padding-left: 1rem;
+}
+
+/* Бейдж количества товаров */
+.badge.bg-secondary {
+  background-color: var(--color-2) !important;
+  color: var(--color-5) !important;
+  font-weight: 600;
+}
+
+/* Поля ввода и селекты в фильтре */
+.form-select, .form-control {
+  background-color: #fff;
+  border: 1px solid #ddd;
+}
+
+.form-select:focus {
+  border-color: var(--color-1);
+  box-shadow: 0 0 0 0.2rem rgba(158, 47, 31, 0.15);
+}
+/* ============================================
+   Исправление ценников (убираем синий)
+   ============================================ */
+
+/* Переопределяем стандартный класс Bootstrap .text-primary */
+.text-primary {
+    color: var(--color-1) !important; /* Бордовый #9E2F1F */
+}
+
+/* Делаем цену в карточках более красивой и крупной */
+.card-body .text-primary, 
+h5.text-primary {
+    font-family: 'Playfair Display', serif; /* Красивый шрифт с засечками для цифр */
+    font-weight: 700;
+    font-size: 1.3rem; /* Чуть крупнее */
+    color: var(--color-1) !important;
+    text-shadow: 1px 1px 0px rgba(0,0,0,0.05); /* Легкая тень для объема */
+}
+
+/* Цена в карточке оформления заказа (checkout) */
+.text-success {
+    color: var(--color-3) !important; /* Темно-коричневый для итоговой суммы */
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+}
+/* Фиксированный размер изображений товаров */
+.card img {
+    width: 100%;
+    height: 250px;
+    object-fit: cover;
+    object-position: center;
+}
+
+/* Карточка товара фиксированной высоты */
+.card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.card-body {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Кнопки всегда внизу карточки */
+.card-body .mt-auto,
+.card-body form:last-child,
+.card-body .d-grid {
+    margin-top: auto;
+}
+/* === Убираем стрелки у всех number input === */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: none; /* ← Добавили для устранения предупреждения linter */
+}

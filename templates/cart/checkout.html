@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+{% block title %}Оформление и оплата{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-lg-7">
+        <form method="post" id="checkoutForm">
+            {% csrf_token %}
+            
+            <!-- Доставка -->
+            <div class="card mb-4">
+                <div class="card-header"><i class="bi bi-truck"></i> Данные доставки</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Адрес доставки *</label>
+                        <input type="text" name="address" class="form-control" value="{{ user.address|default:'' }}" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Телефон *</label>
+                            <input type="text" name="phone" id="phone" class="form-control" placeholder="+7 (___) ___-__-__" maxlength="18" value="{{ user.phone|default:'' }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Email *</label>
+                            <input type="email" name="email" class="form-control" value="{{ user.email }}" required readonly>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Способ доставки -->
+            <!-- Способ доставки -->
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">🚚 Способ доставки</h5>
+    </div>
+    <div class="card-body">
+        {% if delivery_choices %}
+            {% for value, label in delivery_choices %}
+            <div class="form-check p-3 mb-2 border rounded {% if forloop.first %}border-primary bg-light{% endif %}" style="cursor: pointer;">
+                <input class="form-check-input mt-1" type="radio" name="delivery_method" id="del_{{ value }}" value="{{ value }}" 
+                       {% if forloop.first %}checked{% endif %}>
+                <label class="form-check-label w-100 d-flex justify-content-between align-items-center" for="del_{{ value }}">
+                    <span>{{ label }}</span>
+                    <span class="badge {% if value == 'standard' or value == 'pickup' %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                        {% if value == 'standard' or value == 'pickup' %}Бесплатно{% elif value == 'express' %}+350 ₽{% else %}+750 ₽{% endif %}
+                    </span>
+                </label>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p class="text-danger">Ошибка: варианты доставки не загружены.</p>
+        {% endif %}
+    </div>
+</div>
+
+            <!-- Оплата -->
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white"><i class="bi bi-credit-card"></i> Оплата картой</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Номер карты</label>
+                        <input type="text" id="cardNumber" class="form-control" placeholder="0000 0000 0000 0000" maxlength="19" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Срок действия</label>
+                            <input type="text" id="cardExpiry" class="form-control" placeholder="MM/YY" maxlength="5" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">CVV/CVC</label>
+                            <input type="password" id="cardCvv" class="form-control" placeholder="•••" maxlength="3" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Имя держателя карты</label>
+                        <input type="text" id="cardName" class="form-control" placeholder="IVAN IVANOV" required>
+                    </div>
+                    <button type="submit" class="btn btn-success btn-lg w-100" id="payBtn">
+                        <i class="bi bi-lock-fill"></i> Оплатить <span id="btnTotal">{{ cart.get_total_price|floatformat:2 }}</span> ₽
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <div class="col-lg-5">
+        <div class="card bg-light p-3 sticky-top" style="top: 90px;">
+            <h5 class="mb-3">Ваш заказ:</h5>
+            <ul class="list-unstyled">
+                {% for item in cart %}
+                <li class="d-flex justify-content-between mb-2 border-bottom pb-2">
+                    <span>{{ item.product.name }} <small class="text-muted">x{{ item.quantity }}</small></span>
+                    <strong>{{ item.total_price|floatformat:2 }} ₽</strong>
+                </li>
+                {% endfor %}
+            </ul>
+            <hr>
+            <div class="d-flex justify-content-between mb-1">
+                <span>Товары:</span>
+                <strong id="goodsTotal">{{ cart.get_total_price|floatformat:2 }} ₽</strong>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+                <span>Доставка:</span>
+                <strong id="deliveryTotal">0.00 ₽</strong>
+            </div>
+            <hr>
+            <div class="d-flex justify-content-between">
+                <h5>Итого:</h5>
+                <h4 class="text-primary" id="finalTotal">{{ cart.get_total_price|floatformat:2 }} ₽</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно обработки -->
+<div class="modal fade" id="processingModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-center p-4">
+            <div class="spinner-border text-success mb-3" style="width: 3rem; height: 3rem;"></div>
+            <h5>Обработка платежа...</h5>
+            <p class="text-muted">Связываемся с банком. Не закрывайте страницу.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // Маска телефона
+    const phoneInput = document.getElementById('phone');
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function(e) {
+            let x = e.target.value.replace(/\D/g, '').match(/(\d{0,1})(\d{0,3})(\d{0,3})(\d{0,2})(\d{0,2})/);
+            e.target.value = !x[2] ? '+7 (' : '+7 (' + x[2] + (x[3] ? ') ' + x[3] : '') + (x[4] ? '-' + x[4] : '') + (x[5] ? '-' + x[5] : '');
+        });
+    }
+
+    // 💰 Динамический пересчёт доставки
+    // Убираем пробелы и заменяем запятую на точку для JS
+    const goodsPriceRaw = "{{ cart.get_total_price|floatformat:2 }}".replace(/\s/g, '').replace(',', '.');
+    const goodsPrice = parseFloat(goodsPriceRaw) || 0;
+    
+    const deliveryRadios = document.querySelectorAll('input[name="delivery_method"]');
+    const deliveryPrices = {'standard': 0, 'express': 350, 'premium': 750, 'pickup': 0};
+
+    function updateTotals() {
+        const selected = document.querySelector('input[name="delivery_method"]:checked');
+        if (!selected) return;
+        
+        const cost = deliveryPrices[selected.value] || 0;
+        const final = goodsPrice + cost;
+        
+        const deliveryTotal = document.getElementById('deliveryTotal');
+        const finalTotal = document.getElementById('finalTotal');
+        const btnTotal = document.getElementById('btnTotal');
+        
+        if (deliveryTotal) deliveryTotal.textContent = cost.toFixed(2) + ' ₽';
+        if (finalTotal) finalTotal.textContent = final.toFixed(2) + ' ₽';
+        if (btnTotal) btnTotal.textContent = final.toFixed(2);
+    }
+
+    if (deliveryRadios.length > 0) {
+        deliveryRadios.forEach(r => r.addEventListener('change', updateTotals));
+        updateTotals(); // Пересчитать при загрузке
+    }
+
+    // Имитация оплаты
+    const checkoutForm = document.getElementById('checkoutForm');
+    if (checkoutForm) {
+        checkoutForm.addEventListener('submit', function(e) {
+            const phoneDigits = phoneInput ? phoneInput.value.replace(/\D/g, '') : '';
+            if (phoneDigits.length !== 11 || !['7','8'].includes(phoneDigits[0])) {
+                e.preventDefault(); 
+                if (phoneInput) phoneInput.focus(); 
+                return;
+            }
+            e.preventDefault();
+            const modal = new bootstrap.Modal(document.getElementById('processingModal'));
+            modal.show();
+            const payBtn = document.getElementById('payBtn');
+            if (payBtn) payBtn.disabled = true;
+            setTimeout(() => checkoutForm.submit(), 2000);
+        });
+    }
+});
+</script>
+{% endblock %}

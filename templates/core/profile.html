@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}Мой профиль{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header">Профиль пользователя</div>
+    <div class="card-body">
+        <p><strong>Имя:</strong> {{ user.first_name }} {{ user.last_name }}</p>
+        <p><strong>Email:</strong> {{ user.email }}</p>
+        <p><strong>Роль:</strong> {{ user.get_role_display }}</p>
+        <a href="{% url 'catalog' %}" class="btn btn-primary">Вернуться в каталог</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block admin_content %}
+<div class="card border-danger">
+    <div class="card-header bg-danger text-white">
+        <h5 class="mb-0">⚠️ Подтверждение удаления</h5>
+    </div>
+    <div class="card-body">
+        <p>Вы действительно хотите удалить товар <strong>"{{ product.name }}"</strong>?</p>
+        <p class="text-muted small">Это действие нельзя отменить. Все связанные данные (остатки на складе, позиции в заказах) также будут удалены.</p>
+        
+        <form method="post">
+            {% csrf_token %}
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-danger">Да, удалить</button>
+                <a href="{% url 'admin_products' %}" class="btn btn-outline-secondary">Отмена</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

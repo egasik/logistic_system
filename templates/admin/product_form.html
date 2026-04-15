@@ -1,0 +1,97 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block admin_content %}
+<h3>{% if action == 'add' %}➕ Добавить новый продукт{% else %}✏️ Редактировать продукт{% endif %}</h3>
+
+<form method="post" enctype="multipart/form-data" class="mt-4">
+    {% csrf_token %}
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Название товара *</label>
+                        <input type="text" name="name" class="form-control" 
+                               value="{{ product.name|default:'' }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Описание</label>
+                        <textarea name="description" class="form-control" rows="3">{{ product.description|default:'' }}</textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Категория</label>
+                            <select name="category" class="form-select">
+                                {% for cat in categories %}
+                                <option value="{{ cat.id }}" {% if product.category_id == cat.id %}selected{% endif %}>
+                                    {{ cat.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+    <label for="id_price" class="form-label">Цена (₽) *</label>
+    <input type="number" 
+           id="id_price"
+           name="price" 
+           class="form-control" 
+           value="{% if product.price %}{{ product.price|stringformat:".2f" }}{% else %}0.00{% endif %}" 
+           step="100" 
+           min="0" 
+           required>
+    <small class="text-muted">Введите цену в рублях</small>
+</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Статус</label>
+                        <select name="status" class="form-select">
+                            <option value="active" {% if product.status == 'active' %}selected{% endif %}>Активен</option>
+                            <option value="inactive" {% if product.status == 'inactive' %}selected{% endif %}>Неактивен</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <label class="form-label">Изображение товара</label>
+                    {% if product.image %}
+                    <img src="{{ product.image.url }}" class="img-fluid rounded mb-2" style="max-height: 200px;">
+                    {% endif %}
+                    <input type="file" name="image" class="form-control" accept="image/*">
+                </div>
+            </div>
+            
+            <div class="card mb-3">
+                <div class="card-header">📦 Складские остатки</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Количество на складе</label>
+                        <input type="number" name="quantity" class="form-control" 
+                               value="{{ stock.quantity|default:0 }}" min="0">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Минимальный порог</label>
+                        <input type="number" name="min_threshold" class="form-control" 
+                               value="{{ stock.min_threshold|default:5 }}" min="1">
+                        <small class="text-muted">При достижении этого остатка система будет предлагать заказать товар</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary">
+                    {% if action == 'add' %}💾 Сохранить товар{% else %}💾 Обновить товар{% endif %}
+                </button>
+                <a href="{% url 'admin_products' %}" class="btn btn-outline-secondary">Отмена</a>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
