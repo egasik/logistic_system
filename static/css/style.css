@@ -519,11 +519,17 @@ input[type="number"] {
     max-height: 400px;
     overflow-y: auto;
     overflow-x: hidden;
+    margin-bottom: 1rem;
 }
 
-/* Карточка категорий */
+/* Карточка категорий - первая карточка */
 .col-md-3 .card:first-child {
     max-height: 350px;
+}
+
+/* Карточка фильтра - вторая карточка */
+.col-md-3 .card:nth-child(2) {
+    max-height: 200px;
 }
 
 /* Заголовки в сайдбаре */
@@ -552,6 +558,11 @@ input[type="number"] {
 .col-md-3 .form-select {
     font-size: 0.85rem;
     padding: 0.4rem 0.6rem;
+}
+
+/* Тело карточки фильтра */
+.col-md-3 .card-body {
+    padding: 0.75rem;
 }
 
 /* Кастомизация скроллбара для сайдбара */
