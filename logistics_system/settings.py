@@ -45,10 +45,10 @@ INSTALLED_APPS = [
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'logistic_db',
-        'USER': 'logistics_user',
-        'PASSWORD': 'DevPass2026!',
-        'HOST': '127.0.0.1',
+        'NAME': '23009_logistic_db',
+        'USER': '23009',
+        'PASSWORD': 'bfnqxt',
+        'HOST': 'web.edu',
         'PORT': '3306',
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
@@ -91,7 +91,7 @@ WSGI_APPLICATION = 'logistics_system.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
+"""
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
@@ -106,7 +106,7 @@ DATABASES = {
         },
     }
 }
-
+"""
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
