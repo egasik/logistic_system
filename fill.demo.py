@@ -15,7 +15,7 @@ from core.models import Category, Product, Stock
 # Здесь указываем ПУТИ к картинкам внутри репозитория.
 # Скрипт скопирует их из demo_images/ в media/products/
 PRODUCT_IMAGES = {
-    "Смартфон NOTHING PHONE 3": "media/products/6.png",
+    "Смартфон NOTHING PHONE 3": "media/products/7704811119_Exgc77V.webp",
     "Ноутбук ASUS VivoBook 15": "media/products/7.png",
     "Наушники Sony WH-1000XM5": "media/products/3.png",
     "Диван угловой 'Комфорт'": "media/products/8.png",
@@ -63,7 +63,7 @@ def copy_and_rename_image(relative_src_path, product_id):
     base_dir = Path(settings.BASE_DIR)
     src_file = base_dir / relative_src_path
     dst_dir = base_dir / 'media' / 'products'
-    dst_file = dst_dir / f"{product_id}.png"
+    dst_file = dst_dir / f"{product_id}.jpg"
     
     # Создаём папку назначения, если нет
     dst_dir.mkdir(parents=True, exist_ok=True)
@@ -76,8 +76,8 @@ def copy_and_rename_image(relative_src_path, product_id):
     try:
         # Копируем файл (перезаписываем, если уже есть)
         shutil.copy2(src_file, dst_file)
-        print(f"   ✅ Скопировано: {relative_src_path} → products/{product_id}.png")
-        return f"products/{product_id}.png"
+        print(f"   ✅ Скопировано: {relative_src_path} → products/{product_id}.jpg")
+        return f"products/{product_id}.jpg"
     except Exception as e:
         print(f"   ❌ Ошибка копирования: {e}")
         return None
@@ -135,7 +135,7 @@ def fill_data():
 
     print("-" * 30)
     print("✅ Готово! Все товары созданы с картинками.")
-    print("💡 Картинки хранятся в media/products/{id}.png")
+    print("💡 Картинки хранятся в media/products/{id}.jpg")
     print("📦 Не забудь добавить media/products/ в Git, чтобы они попали в репозиторий!")
 
 if __name__ == "__main__":
