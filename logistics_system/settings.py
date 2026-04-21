@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'core',  # 2. Приложение core должно быть здесь
 ]
-
+"""
 # 3. Настройка БД (оставьте вашу конфигурацию MySQL)
 DATABASES = {
     'default': {
@@ -56,6 +56,7 @@ DATABASES = {
         },
     }
 }
+"""
 # 4. Настройка медиафайлов (для аватаров и фото товаров)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -91,7 +92,7 @@ WSGI_APPLICATION = 'logistics_system.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-"""
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
@@ -106,7 +107,7 @@ DATABASES = {
         },
     }
 }
-"""
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
