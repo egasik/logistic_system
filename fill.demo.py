@@ -1,40 +1,38 @@
 import os
 import sys
 import django
-import urllib.request
-from urllib.error import URLError
+import shutil
+from pathlib import Path
 
 # Настройка окружения Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'logistics_system.settings')
 django.setup()
 
 from django.conf import settings
-from pathlib import Path
 from core.models import Category, Product, Stock
 
 # === НАСТРОЙКИ ИЗОБРАЖЕНИЙ ===
-# Сюда вставляй ссылки на картинки.
-# Можно использовать прямые ссылки с GitHub (Raw) или любого хостинга.
-# Если картинки нет, товар останется без фото.
+# Здесь указываем ПУТИ к картинкам внутри репозитория.
+# Скрипт скопирует их из demo_images/ в media/products/
 PRODUCT_IMAGES = {
-    "Смартфон NOTHING PHONE 3": "https://placehold.co/400x400/png?text=PHONE+3",
-    "Ноутбук ASUS VivoBook 15": "https://placehold.co/400x400/png?text=LAPTOP",
-    "Наушники Sony WH-1000XM5": "https://placehold.co/400x400/png?text=HEADPHONES",
-    "Диван угловой 'Комфорт'": "https://placehold.co/400x400/png?text=SOFA",
-    "Дрель-шуруповерт Bosch": "https://placehold.co/400x400/png?text=DRILL",
-    "Умная лампа Philips": "https://placehold.co/400x400/png?text=LAMP",
-    "Кроссовки Nike Air Max": "https://placehold.co/400x400/png?text=SNEAKERS",
-    "Куртка зимняя мужская": "https://placehold.co/400x400/png?text=JACKET",
-    "Рюкзак Xiaomi City": "https://placehold.co/400x400/png?text=BACKPACK",
-    "Велосипед Stark Tanuki": "https://placehold.co/400x400/png?text=BIKE",
-    "Гантели разборные 20кг": "https://placehold.co/400x400/png?text=DUMBBELLS",
-    "Коврик для йоги Pro": "https://placehold.co/400x400/png?text=YOGA+MAT",
-    "Конструктор LEGO City": "https://placehold.co/400x400/png?text=LEGO",
-    "Коляска 2 в 1": "https://placehold.co/400x400/png?text=STROLLER",
-    "Игра Монополия": "https://placehold.co/400x400/png?text=MONOPOLY",
+    "Смартфон NOTHING PHONE 3": "media/products/6.png",
+    "Ноутбук ASUS VivoBook 15": "media/products/7.png",
+    "Наушники Sony WH-1000XM5": "media/products/3.png",
+    "Диван угловой 'Комфорт'": "media/products/8.png",
+    "Дрель-шуруповерт Bosch": "media/products/9.png",
+    "Умная лампа Philips": "media/products/10.png",
+    "Кроссовки Nike Air Max": "media/products/11.png",
+    "Куртка зимняя мужская": "media/products/12.png",
+    "Рюкзак Xiaomi City": "media/products/13.png",
+    "Велосипед Stark Tanuki": "media/products/14.png",
+    "Гантели разборные 20кг": "media/products/15.png",
+    "Коврик для йоги Pro": "media/products/16.png",
+    "Конструктор LEGO City": "media/products/17.png",
+    "Коляска 2 в 1": "media/products/18.png",
+    "Игра Монополия": "media/products/19.png",
 }
 
-# Данные для заполнения (Название, Описание, Цена, Категория)
+# Данные для заполнения
 PRODUCTS = [
     ("Смартфон NOTHING PHONE 3", "Мощный смартфон с прозрачным дизайном.", 40000, "Техника и электроника"),
     ("Ноутбук ASUS VivoBook 15", "Легкий ноутбук для работы и учебы.", 52900, "Техника и электроника"),
@@ -53,34 +51,39 @@ PRODUCTS = [
     ("Игра Монополия", "Классическая экономическая настолка.", 2190, "Детские товары"),
 ]
 
-def download_and_rename_image(url, product_id):
+def copy_and_rename_image(relative_src_path, product_id):
     """
-    Скачивает картинку по URL и сохраняет её как {product_id}.jpg
+    Копирует картинку из репозитория (demo_images/) в media/products/
+    и переименовывает её в {product_id}.jpg
     """
-    if not url:
+    if not relative_src_path:
         return None
 
-    # Папка media/products
-    media_dir = Path(settings.MEDIA_ROOT) / 'products'
-    media_dir.mkdir(parents=True, exist_ok=True)
-
-    filename = f"{product_id}.jpg"
-    filepath = media_dir / filename
+    # Пути
+    base_dir = Path(settings.BASE_DIR)
+    src_file = base_dir / relative_src_path
+    dst_dir = base_dir / 'media' / 'products'
+    dst_file = dst_dir / f"{product_id}.png"
     
-    # Путь, который сохранится в БД (относительный)
-    relative_path = f"products/{filename}"
+    # Создаём папку назначения, если нет
+    dst_dir.mkdir(parents=True, exist_ok=True)
+
+    # Проверяем, существует ли исходный файл
+    if not src_file.exists():
+        print(f"   ⚠️ Файл не найден: {src_file}")
+        return None
 
     try:
-        print(f"   📥 Скачивание картинки для товара #{product_id}...")
-        urllib.request.urlretrieve(url, filepath)
-        print(f"   ✅ Сохранено: {relative_path}")
-        return relative_path
-    except URLError as e:
-        print(f"   ❌ Ошибка загрузки: {e}")
+        # Копируем файл (перезаписываем, если уже есть)
+        shutil.copy2(src_file, dst_file)
+        print(f"   ✅ Скопировано: {relative_src_path} → products/{product_id}.png")
+        return f"products/{product_id}.png"
+    except Exception as e:
+        print(f"   ❌ Ошибка копирования: {e}")
         return None
 
 def fill_data():
-    print("🚀 Начинаем заполнение базы демо-данными (с картинками)...")
+    print("🚀 Начинаем заполнение базы демо-данными (с локальными картинками)...")
 
     CATEGORIES = [
         ("Техника и электроника", "Смартфоны, ноутбуки и гаджеты."),
@@ -118,23 +121,22 @@ def fill_data():
             )
 
             # === ЛОГИКА КАРТИНОК ===
-            # Получаем ссылку из словаря
-            image_url = PRODUCT_IMAGES.get(name)
+            image_path = PRODUCT_IMAGES.get(name)
             
-            if image_url:
-                # Скачиваем и сохраняем как {id}.jpg
-                saved_path = download_and_rename_image(image_url, prod.id)
+            if image_path:
+                # Копируем и переименовываем в {id}.jpg
+                saved_path = copy_and_rename_image(image_path, prod.id)
                 
                 if saved_path:
                     # Обновляем поле image у товара
-                    # Если файл уже был, мы его перезаписываем (т.к. имя id.jpg неизменно)
                     prod.image = saved_path
                     prod.save(update_fields=['image'])
-                    print(f"   📸 Картинка прикреплена к {name}")
+                    print(f"   📸 Картинка прикреплена к {name} (ID: {prod.id})")
 
     print("-" * 30)
     print("✅ Готово! Все товары созданы с картинками.")
-    print("💡 Картинки хранятся в media/products/{id}.jpg")
+    print("💡 Картинки хранятся в media/products/{id}.png")
+    print("📦 Не забудь добавить media/products/ в Git, чтобы они попали в репозиторий!")
 
 if __name__ == "__main__":
     fill_data()

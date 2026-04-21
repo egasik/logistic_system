@@ -716,7 +716,7 @@ def product_detail_view(request, product_id):
         'product': product,
         'related_products': related_products,
     }
-    return render(request, 'catalog/product_detail.html', context)
+    return render(request, 'product_detail.html', context)
     # =============================================================================
 # 🔐 АВТОРИЗАЦИЯ И РЕГИСТРАЦИЯ
 # =============================================================================
