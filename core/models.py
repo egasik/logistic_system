@@ -103,53 +103,7 @@ class Stock(models.Model):
         verbose_name_plural = 'Складские остатки'
 
 
-# ------------------ ПОСТАВЩИКИ И ПОСТАВКИ ------------------
-class Supplier(models.Model):
-    company_name = models.CharField('Название компании', max_length=150)
-    contact_person = models.CharField('Контактное лицо', max_length=100)
-    phone = models.CharField('Телефон', max_length=20)
-    email = models.EmailField('Email', blank=True)
-    address = models.TextField('Адрес', blank=True)
-    terms = models.TextField('Условия поставки', blank=True)
-
-    def __str__(self):
-        return self.company_name
-
-    class Meta:
-        verbose_name = 'Поставщик'
-        verbose_name_plural = 'Поставщики'
-
-
-class Supply(models.Model):
-    STATUS_CHOICES = [
-        ('pending', 'Ожидается'),
-        ('received', 'Принята'),
-        ('cancelled', 'Отменена'),
-    ]
-    
-    supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, verbose_name='Поставщик')
-    invoice_number = models.CharField('Номер накладной', max_length=50, unique=True)
-    date = models.DateField('Дата поставки')
-    status = models.CharField('Статус', max_length=20, choices=STATUS_CHOICES, default='pending')
-    created_at = models.DateTimeField('Дата создания', auto_now_add=True)
-
-    def __str__(self):
-        return f"Поставка #{self.invoice_number} от {self.supplier}"
-
-    class Meta:
-        verbose_name = 'Поставка'
-        verbose_name_plural = 'Поставки'
-
-
-class SupplyItem(models.Model):
-    supply = models.ForeignKey(Supply, on_delete=models.CASCADE, related_name='items')
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name='Товар')
-    quantity = models.PositiveIntegerField('Количество')
-    purchase_price = models.DecimalField('Цена закупки', max_digits=10, decimal_places=2)
-
-    def __str__(self):
-        return f"{self.product.name} x {self.quantity}"
-
+# ------------------ ЗАКАЗЫ ------------------
 DELIVERY_CHOICES = [
     ('standard', 'Стандартная (3-5 дней)'),
     ('express', 'Экспресс (1-2 дня)'),
@@ -163,7 +117,7 @@ DELIVERY_PRICES = {
     'premium': 750,
     'pickup': 0,
 }
-# ------------------ ЗАКАЗЫ ------------------
+
 class Order(models.Model):
     STATUS_CHOICES = [
         ('new', 'Новый'),
@@ -206,24 +160,3 @@ class OrderItem(models.Model):
         return f"{self.product} x {self.quantity}"
 
 
-# ------------------ ТРАНЗАКЦИИ ------------------
-class Transaction(models.Model):
-    STATUS_CHOICES = [
-        ('pending', 'Ожидает'),
-        ('success', 'Успешно'),
-        ('failed', 'Ошибка'),
-    ]
-    
-    code = models.CharField('Код транзакции', max_length=30, unique=True)
-    client = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name='Клиент')
-    order = models.OneToOneField(Order, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Заказ')
-    amount = models.DecimalField('Сумма', max_digits=10, decimal_places=2)
-    status = models.CharField('Статус', max_length=20, choices=STATUS_CHOICES, default='pending')
-    created_at = models.DateTimeField('Дата создания', auto_now_add=True)
-
-    def __str__(self):
-        return f"Транзакция {self.code} | {self.amount} ₽"
-
-    class Meta:
-        verbose_name = 'Транзакция'
-        verbose_name_plural = 'Транзакции'
