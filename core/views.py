@@ -17,55 +17,81 @@ from .models import Product, Category, Stock, Order, User
 from .forms import UserRegisterForm
 from .decorators import admin_required
 from .utils import Cart  # <-- Класс корзины
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.contrib.auth import login, logout
+from django.contrib import messages
 from .models import Product, Category, Stock, Order, OrderItem, User, DELIVERY_CHOICES, DELIVERY_PRICES
-# ------------------ ПУБЛИЧНАЯ ЧАСТЬ ------------------
+from django.db.models import Q, Count, Min, Max  # ← добавь в импорты сверху
+from django.core.paginator import Paginator
+from django.contrib.auth.decorators import login_required
+from .forms import UserUpdateForm, ProfileUpdateForm
 
 def catalog_view(request):
-    products = Product.objects.select_related('category').filter(status='active')
-    categories = Category.objects.annotate(product_count=models.Count('products')).all()
+    # Базовый запрос
+    products = Product.objects.select_related('category', 'stock').filter(status='active')
+    categories = Category.objects.annotate(
+        product_count=Count('products', filter=Q(products__status='active'))
+    )
     
-    # Фильтрация по категории
+    # === ФИЛЬТРЫ ===
+    
+    # 1. Категория
     category_id = request.GET.get('category')
-    if category_id:
-        products = products.filter(category_id=category_id)
+    if category_id and category_id.isdigit():
+        products = products.filter(category_id=int(category_id))
     
-    # Фильтрация по статусу
-    status_filter = request.GET.get('status')
-    if status_filter:
-        products = products.filter(status=status_filter)
-
-    # Поиск
-    search_query = request.GET.get('search')
-    if search_query:
-        products = products.filter(name__icontains=search_query)
-
+    # 2. Статус наличия (исправленная логика)
+    status = request.GET.get('status')
+    if status == 'active':
+        products = products.filter(stock__quantity__gt=0)
+    elif status == 'out_of_stock':
+        # Показываем товары, у которых количество = 0 ИЛИ нет записи в stock
+        products = products.filter(Q(stock__quantity=0) | Q(stock__isnull=True))
+    
+    # 3. Цена: минимум
+    min_price = request.GET.get('min_price')
+    if min_price and min_price.replace('.', '', 1).isdigit():
+        products = products.filter(price__gte=float(min_price))
+    
+    # 4. Цена: максимум
+    max_price = request.GET.get('max_price')
+    if max_price and max_price.replace('.', '', 1).isdigit():
+        products = products.filter(price__lte=float(max_price))
+    
+    # 5. Поиск по названию и описанию
+    search = request.GET.get('search')
+    if search:
+        products = products.filter(
+            Q(name__icontains=search) | Q(description__icontains=search)
+        )
+    
+    # === ЦЕНА ДЛЯ ШАБЛОНА (мин/макс в текущей выборке) ===
+    price_range = products.aggregate(min=Min('price'), max=Max('price'))
+    
+    # === ПАГИНАЦИЯ ===
+    paginator = Paginator(products, 12)  # 12 товаров на страницу
+    page = request.GET.get('page')
+    products_page = paginator.get_page(page)
+    
+    # === СОХРАНЯЕМ ПАРАМЕТРЫ ДЛЯ ПАГИНАЦИИ ===
+    query_params = request.GET.copy()
+    if 'page' in query_params:
+        del query_params['page']
+    
     context = {
-        'products': products,
+        'products': products_page,
         'categories': categories,
+        'price_range': price_range,
+        'query_params': query_params.urlencode(),  # для пагинации
+        # Текущие значения фильтров для подстановки в форму
+        'current_category': category_id,
+        'current_status': status,
+        'current_min_price': request.GET.get('min_price', ''),
+        'current_max_price': request.GET.get('max_price', ''),
+        'current_search': search,
     }
+    
     return render(request, 'catalog.html', context)
-
-def product_detail_view(request, product_id):
-    product = get_object_or_404(Product, id=product_id)
-    return render(request, 'product_detail.html', {'product': product})
-
-def register_view(request):
-    if request.method == 'POST':
-        form = UserRegisterForm(request.POST)
-        if form.is_valid():
-            user = form.save(commit=False)
-            user.role = 'client'
-            user.save()
-            login(request, user)
-            messages.success(request, 'Регистрация успешна!')
-            return redirect('catalog')
-    else:
-        form = UserRegisterForm()
-    return render(request, 'registration/register.html', {'form': form})
-
-def logout_view(request):
-    logout(request)
-    return redirect('catalog')
 
 # ------------------ АДМИН: ТОВАРЫ ------------------
 
@@ -675,3 +701,78 @@ def admin_user_edit_view(request, user_id):
         'action': 'edit'
     }
     return render(request, 'admin/user_form.html', context)
+
+# =============================================================================
+# 📦 Детальная страница товара (исправленная)
+# =============================================================================
+def product_detail_view(request, product_id):
+    """Страница детального просмотра товара"""
+    product = get_object_or_404(Product.objects.select_related('category', 'stock'), id=product_id, status='active')
+    
+    # Похожие товары из той же категории (исключаем текущий)
+    related_products = Product.objects.filter(
+        category=product.category, 
+        status='active'
+    ).exclude(id=product.id)[:4]
+    
+    context = {
+        'product': product,
+        'related_products': related_products,
+    }
+    return render(request, 'product_detail.html', context)
+    # =============================================================================
+# 🔐 АВТОРИЗАЦИЯ И РЕГИСТРАЦИЯ
+# =============================================================================
+
+def register_view(request):
+    if request.method == 'POST':
+        # Если у тебя своя форма регистрации, замени UserCreationForm на неё
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            messages.success(request, '✅ Регистрация успешна! Добро пожаловать.')
+            return redirect('catalog')
+        else:
+            messages.error(request, '❌ Ошибка в заполнении формы.')
+    else:
+        form = UserCreationForm()
+    # 👇 Укажи точный путь к своему шаблону регистрации
+    return render(request, 'registration/register.html', {'form': form})
+
+def login_view(request):
+    if request.method == 'POST':
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            login(request, form.get_user())
+            return redirect('catalog')
+    else:
+        form = AuthenticationForm()
+    # 👇 Укажи точный путь к своему шаблону входа
+    return render(request, 'registration/login.html', {'form': form})
+
+def logout_view(request):
+    logout(request)
+    messages.info(request, '👋 Вы вышли из системы.')
+    return redirect('catalog')
+
+
+@login_required
+def profile_view(request):
+    if request.method == 'POST':
+        u_form = UserUpdateForm(request.POST, instance=request.user)
+        p_form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user.profile)
+        
+        if u_form.is_valid() and p_form.is_valid():
+            u_form.save()
+            p_form.save()
+            messages.success(request, '✅ Профиль успешно обновлён!')
+            return redirect('profile')
+    else:
+        u_form = UserUpdateForm(instance=request.user)
+        p_form = ProfileUpdateForm(instance=request.user.profile)
+        
+    return render(request, 'core/profile.html', {
+        'u_form': u_form, 
+        'p_form': p_form
+    })

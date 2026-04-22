@@ -583,3 +583,122 @@ input[type="number"] {
 .col-md-3 .card::-webkit-scrollbar-thumb:hover {
     background: var(--color-3);
 }
+/* === ИСПРАВЛЕНИЕ КАРТОЧЕК КАТАЛОГА === */
+.card-img-wrapper {
+    height: 220px;
+    overflow: hidden;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.card-img-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    transition: transform 0.3s ease;
+}
+
+.card:hover .card-img-wrapper img {
+    transform: scale(1.03);
+}
+
+/* Убираем лишние отступы у body карточки */
+.card-body {
+    padding: 1rem;
+}
+
+/* Фикс для строки каталога: не растягивать колонки принудительно */
+.catalog-row {
+    align-items: flex-start !important;
+}
+
+/* Боковая панель не должна растягиваться на всю высоту */
+.sidebar-card {
+    height: auto !important;
+    min-height: unset !important;
+}
+/* === ФИЛЬТРЫ === */
+.sidebar-card {
+    height: auto !important;
+    min-height: unset !important;
+}
+
+#filterForm .form-control-sm {
+    font-size: 0.875rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.badge {
+    font-weight: 500;
+}
+
+/* Плавное появление фильтров */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.card-body .badge {
+    animation: fadeIn 0.2s ease-out;
+}
+/* === КАСТОМНАЯ ПАГИНАЦИЯ === */
+.pagination {
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+}
+
+.page-link {
+    border: 1px solid #e0d5c9;
+    color: #5a4a42;
+    background-color: #fff;
+    border-radius: 8px !important;
+    padding: 0.55rem 0.9rem;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: all 0.25s ease;
+    min-width: 40px;
+    text-align: center;
+}
+
+.page-link:hover {
+    background-color: #f9f5f0;
+    color: #8B3A2A; /* Основной цвет твоей темы */
+    border-color: #8B3A2A;
+    transform: translateY(-2px);
+    box-shadow: 0 3px 8px rgba(139, 58, 42, 0.12);
+}
+
+.page-item.active .page-link {
+    background-color: #8B3A2A;
+    border-color: #8B3A2A;
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 3px 10px rgba(139, 58, 42, 0.25);
+    transform: scale(1.05);
+}
+
+.page-item.disabled .page-link {
+    background-color: #f8f9fa;
+    border-color: #e9ecef;
+    color: #adb5bd;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Стрелки «Назад/Вперёд» делаем чуть выразительнее */
+.page-item:first-child .page-link,
+.page-item:last-child .page-link {
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    background-color: #f9f5f0;
+}
+
+.page-item:first-child .page-link:hover,
+.page-item:last-child .page-link:hover {
+    background-color: #8B3A2A;
+    color: #fff;
+    border-color: #8B3A2A;
+}

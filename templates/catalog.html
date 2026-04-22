@@ -3,28 +3,115 @@
 {% block title %}Каталог товаров{% endblock %}
 
 {% block content %}
-<div class="row">
+<div class="row catalog-row">
     <!-- Боковая панель с категориями -->
     <div class="col-md-3">
-        <div class="card mb-3">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">📂 Категории</h5>
-            </div>
-            <div class="list-group list-group-flush">
-                <a href="{% url 'catalog' %}" class="list-group-item list-group-item-action {% if not request.GET.category %}active{% endif %}">
-                    Все товары
-                </a>
-                {% for cat in categories %}
-                <a href="?category={{ cat.id }}" class="list-group-item list-group-item-action {% if request.GET.category == cat.id|stringformat:"s" %}active{% endif %}">
-                    {{ cat.name }}
-                    <span class="badge bg-secondary float-end">{{ cat.products.count }}</span>
-                </a>
-                {% endfor %}
+    <!-- Категории -->
+    <div class="card mb-3 sidebar-card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">📂 Категории</h5>
+        </div>
+        <div class="list-group list-group-flush">
+            <a href="?{% if current_search %}search={{ current_search }}{% endif %}{% if current_min_price %}&min_price={{ current_min_price }}{% endif %}{% if current_max_price %}&max_price={{ current_max_price }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}" 
+               class="list-group-item list-group-item-action {% if not current_category %}active{% endif %}">
+                Все товары
+            </a>
+            {% for cat in categories %}
+            <a href="?category={{ cat.id }}{% if current_search %}&search={{ current_search }}{% endif %}{% if current_min_price %}&min_price={{ current_min_price }}{% endif %}{% if current_max_price %}&max_price={{ current_max_price }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}" 
+               class="list-group-item list-group-item-action {% if current_category == cat.id|stringformat:"s" %}active{% endif %}">
+                {{ cat.name }}
+                <span class="badge bg-secondary float-end">{{ cat.product_count }}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Расширенные фильтры -->
+    <div class="card sidebar-card">
+        <div class="card-header">
+            <h5 class="mb-0">🔍 Фильтры</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" id="filterForm">
+                <!-- Сохраняем поиск при фильтрации -->
+                {% if current_search %}
+                <input type="hidden" name="search" value="{{ current_search }}">
+                {% endif %}
+                
+                <!-- Статус -->
+                <div class="mb-3">
+                    <label class="form-label small">Наличие</label>
+                    <select name="status" class="form-select form-select-sm" onchange="document.getElementById('filterForm').submit()">
+                        <option value="">Все</option>
+                        <option value="active" {% if current_status == 'active' %}selected{% endif %}>✅ В наличии</option>
+                        <option value="out_of_stock" {% if current_status == 'out_of_stock' %}selected{% endif %}>❌ Нет в наличии</option>
+                    </select>
+                </div>
+                
+                <!-- Цена: диапазон -->
+                <div class="mb-3">
+                    <label class="form-label small">Цена, ₽</label>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <input type="number" name="min_price" class="form-control form-control-sm" 
+                                   placeholder="От" value="{{ current_min_price }}" min="0" step="100">
+                        </div>
+                        <div class="col-6">
+                            <input type="number" name="max_price" class="form-control form-control-sm" 
+                                   placeholder="До" value="{{ current_max_price }}" min="0" step="100">
+                        </div>
+                    </div>
+                    {% if price_range.min %}
+                    <small class="text-muted d-block mt-1">
+                        Диапазон: {{ price_range.min|floatformat:0 }} — {{ price_range.max|floatformat:0 }} ₽
+                    </small>
+                    {% endif %}
+                </div>
+                
+                <!-- Кнопки -->
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="bi bi-funnel"></i> Применить
+                    </button>
+                    <a href="?" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-x-circle"></i> Сбросить
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Активные фильтры (теги) -->
+    {% if current_category or current_status or current_min_price or current_max_price or current_search %}
+    <div class="card mt-3 sidebar-card">
+        <div class="card-body py-2">
+            <small class="text-muted">Активные фильтры:</small>
+            <div class="d-flex flex-wrap gap-1 mt-1">
+                {% if current_search %}
+                <span class="badge bg-info text-dark">🔍 "{{ current_search }}"</span>
+                {% endif %}
+                {% if current_category %}
+                <span class="badge bg-primary">📂 Категория #{{ current_category }}</span>
+                {% endif %}
+                {% if current_status == 'active' %}
+                <span class="badge bg-success">✅ В наличии</span>
+                {% elif current_status == 'out_of_stock' %}
+                <span class="badge bg-danger">❌ Нет в наличии</span>
+                {% endif %}
+                {% if current_min_price %}
+                <span class="badge bg-secondary">от {{ current_min_price }} ₽</span>
+                {% endif %}
+                {% if current_max_price %}
+                <span class="badge bg-secondary">до {{ current_max_price }} ₽</span>
+                {% endif %}
             </div>
         </div>
+    </div>
+    {% endif %}
+</div>
         
-        <!-- Фильтр по статусу -->
-        <div class="card">
+        <!-- Фильтр по статусу
+        <div class="card sidebar-card">
             <div class="card-header">
                 <h5 class="mb-0">🔍 Фильтр</h5>
             </div>
@@ -41,7 +128,7 @@
                 </form>
             </div>
         </div>
-    </div>
+    </div> -->
     
     <!-- Список товаров -->
     <div class="col-md-9">
@@ -99,6 +186,40 @@
                     <p class="text-muted">Товары не найдены.</p>
                 </div>
             {% endfor %}
+            <!-- Пагинация с сохранением параметров -->
+{% if products.paginator.num_pages > 1 %}
+<nav class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if products.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page=1&{{ query_params }}">« Первая</a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ products.previous_page_number }}&{{ query_params }}">← Назад</a>
+        </li>
+        {% endif %}
+        
+        {% for num in products.paginator.page_range %}
+            {% if products.number == num %}
+            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+            {% elif num > products.number|add:'-3' and num < products.number|add:'3' %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ num }}&{{ query_params }}">{{ num }}</a>
+            </li>
+            {% endif %}
+        {% endfor %}
+        
+        {% if products.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ products.next_page_number }}&{{ query_params }}">Вперёд →</a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ products.paginator.num_pages }}&{{ query_params }}">Последняя »</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
         </div>
     </div>
 </div>

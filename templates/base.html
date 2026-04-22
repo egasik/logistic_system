@@ -50,22 +50,35 @@
                 <ul class="navbar-nav">
                     {% if user.is_authenticated %}
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                                <i class="bi bi-person-circle"></i> {{ user.first_name }}
-                                {% if user.role == 'admin' %}
-                                    <span class="badge rounded-pill ms-1" style="background: var(--color-2); color: var(--color-5); font-size: 0.7rem;">Админ</span>
-                                {% endif %}
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                {% if user.role == 'admin' %}
-                                    <li><a class="dropdown-item" href="{% url 'admin_products' %}">📦 Панель управления</a></li>
+                            <!-- Замени старый блок профиля на этот -->
+                            <div class="dropdown">
+                                <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" role="button" data-bs-toggle="dropdown">
+                                    {% if request.user.profile.avatar %}
+                                        <img src="{{ request.user.profile.avatar.url }}" class="rounded-circle" style="width: 32px; height: 32px; object-fit: cover;">
+                                    {% else %}
+                                        <span class="bg-light text-primary rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px; font-weight: bold;">
+                {% if request.user.first_name %}
+                    {{ request.user.first_name|first|upper }}
+                {% elif request.user.email %}
+                    {{ request.user.email|first|upper }}
+                {% else %}
+                    ?
+                {% endif %}
+            </span>
+        {% endif %}
+        
+        <!-- Отображаем имя или email -->
+        <span class="d-none d-md-inline">
+            {{ request.user.get_full_name|default:request.user.email|truncatechars:15 }}
+        </span>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end shadow">
+                                    <li><a class="dropdown-item" href="{% url 'profile' %}"><i class="bi bi-person-gear"></i> Профиль</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'my_orders' %}"><i class="bi bi-box-seam"></i> Мои заказы</a></li>
                                     <li><hr class="dropdown-divider"></li>
-                                {% endif %}
-                                <li><a class="dropdown-item" href="{% url 'my_orders' %}">📋 Мои заказы</a></li>
-                                <li><a class="dropdown-item" href="{% url 'cart_view' %}">🛒 Корзина</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item text-danger" href="{% url 'logout' %}">🚪 Выйти</a></li>
-                            </ul>
+                                    <li><a class="dropdown-item text-danger" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right"></i> Выйти</a></li>
+                                </ul>
+                            </div>
                         </li>
                     {% else %}
                         <li class="nav-item">

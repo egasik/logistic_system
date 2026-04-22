@@ -1,13 +1,56 @@
 {% extends 'base.html' %}
 {% block title %}Мой профиль{% endblock %}
+
 {% block content %}
-<div class="card">
-    <div class="card-header">Профиль пользователя</div>
-    <div class="card-body">
-        <p><strong>Имя:</strong> {{ user.first_name }} {{ user.last_name }}</p>
-        <p><strong>Email:</strong> {{ user.email }}</p>
-        <p><strong>Роль:</strong> {{ user.get_role_display }}</p>
-        <a href="{% url 'catalog' %}" class="btn btn-primary">Вернуться в каталог</a>
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h4 class="mb-0">👤 Настройки профиля</h4>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Превью аватара -->
+                    <div class="text-center mb-4">
+                        {% if user.profile.avatar %}
+                            <img src="{{ user.profile.avatar.url }}" class="rounded-circle border border-3 shadow-sm" 
+                                 style="width: 120px; height: 120px; object-fit: cover;">
+                        {% else %}
+                            <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center border border-3 shadow-sm" style="width: 120px; height: 120px; font-size: 3rem; color: #8B3A2A;">
+                                    {% if user.first_name %}
+                                        {{ user.first_name|first|upper }}
+                                    {% elif user.email %}
+                                        {{ user.email|first|upper }}
+                                    {% else %}
+                                        ?
+                                    {% endif %}
+                                </div>
+                        {% endif %}
+                    </div>
+
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <h6 class="text-muted mb-3">📝 Основные данные</h6>
+                        {{ u_form.as_p }}
+                        
+                        <hr class="my-4">
+                        
+                        <h6 class="text-muted mb-3">📷 Фото и контакты</h6>
+                        {{ p_form.as_p }}
+                        
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                💾 Сохранить изменения
+                            </button>
+                            <a href="{% url 'catalog' %}" class="btn btn-outline-secondary">
+                                ← В каталог
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

@@ -40,15 +40,15 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'core',  # 2. Приложение core должно быть здесь
 ]
-
+"""
 # 3. Настройка БД (оставьте вашу конфигурацию MySQL)
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'logistic_db',
-        'USER': 'logistics_user',
-        'PASSWORD': 'DevPass2026!',
-        'HOST': '127.0.0.1',
+        'NAME': '23009_logistic_db',
+        'USER': '23009',
+        'PASSWORD': 'bfnqxt',
+        'HOST': 'web.edu',
         'PORT': '3306',
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
@@ -56,6 +56,7 @@ DATABASES = {
         },
     }
 }
+"""
 # 4. Настройка медиафайлов (для аватаров и фото товаров)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -166,3 +167,5 @@ TIME_ZONE = 'Asia/Irkutsk'  # UTC+5 (Екатеринбургское время
 
 USE_TZ = True  # Django будет хранить время в UTC, но отображать в заданном поясе
 LANGUAGE_CODE = 'ru-ru'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
