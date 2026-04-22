@@ -1,8 +1,8 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import (
-    User, Category, Product, Stock, Supplier, Supply, SupplyItem, 
-    Order, OrderItem, Transaction
+    User, Category, Product, Stock, 
+    Order, OrderItem
 )
 
 # ------------------ ПОЛЬЗОВАТЕЛИ ------------------
@@ -56,25 +56,6 @@ class StockAdmin(admin.ModelAdmin):
     search_fields = ('product__name',)
 
 
-# ------------------ ПОСТАВЩИКИ И ПОСТАВКИ ------------------
-class SupplyItemInline(admin.TabularInline):
-    model = SupplyItem
-    extra = 1  # Сколько пустых строк добавлять по умолчанию
-
-
-@admin.register(Supplier)
-class SupplierAdmin(admin.ModelAdmin):
-    list_display = ('company_name', 'contact_person', 'phone')
-    search_fields = ('company_name',)
-
-
-@admin.register(Supply)
-class SupplyAdmin(admin.ModelAdmin):
-    list_display = ('invoice_number', 'supplier', 'date', 'status')
-    list_filter = ('status', 'date')
-    inlines = [SupplyItemInline]  # Позволяет добавлять товары прямо в поставку
-
-
 # ------------------ ЗАКАЗЫ ------------------
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
@@ -91,10 +72,3 @@ class OrderAdmin(admin.ModelAdmin):
     inlines = [OrderItemInline]  # Позволяет видеть состав заказа
 
 
-# ------------------ ТРАНЗАКЦИИ ------------------
-@admin.register(Transaction)
-class TransactionAdmin(admin.ModelAdmin):
-    list_display = ('code', 'client', 'order', 'amount', 'status', 'created_at')
-    list_filter = ('status',)
-    search_fields = ('code',)
-    readonly_fields = ('created_at',)
