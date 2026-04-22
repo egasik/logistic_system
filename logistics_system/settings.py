@@ -167,3 +167,5 @@ TIME_ZONE = 'Asia/Irkutsk'  # UTC+5 (Екатеринбургское время
 
 USE_TZ = True  # Django будет хранить время в UTC, но отображать в заданном поясе
 LANGUAGE_CODE = 'ru-ru'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'

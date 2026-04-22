@@ -1,6 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.base_user import BaseUserManager
+from django.contrib.auth.models import User
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 # ------------------ КАСТОМНЫЙ МЕНЕДЖЕР ПОЛЬЗОВАТЕЛЕЙ ------------------
 class CustomUserManager(BaseUserManager):
@@ -227,3 +230,27 @@ class Transaction(models.Model):
     class Meta:
         verbose_name = 'Транзакция'
         verbose_name_plural = 'Транзакции'
+
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    avatar = models.ImageField(upload_to='avatars/', blank=True, null=True, verbose_name="Аватар")
+    phone = models.CharField(max_length=18, blank=True, verbose_name="Телефон")
+    address = models.TextField(blank=True, verbose_name="Адрес доставки")
+    bio = models.TextField(blank=True, verbose_name="О себе")
+
+    class Meta:
+        verbose_name = "Профиль"
+        verbose_name_plural = "Профили"
+
+    def __str__(self):
+        return f'{self.user.username} | Профиль'
+
+# Автоматически создаём профиль при регистрации нового пользователя
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        Profile.objects.create(user=instance)
+
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    instance.profile.save()

@@ -23,6 +23,9 @@ from django.contrib import messages
 from .models import Product, Category, Stock, Order, OrderItem, User, DELIVERY_CHOICES, DELIVERY_PRICES
 from django.db.models import Q, Count, Min, Max  # ← добавь в импорты сверху
 from django.core.paginator import Paginator
+from django.contrib.auth.decorators import login_required
+from .forms import UserUpdateForm, ProfileUpdateForm
+
 def catalog_view(request):
     # Базовый запрос
     products = Product.objects.select_related('category', 'stock').filter(status='active')
@@ -752,3 +755,24 @@ def logout_view(request):
     logout(request)
     messages.info(request, '👋 Вы вышли из системы.')
     return redirect('catalog')
+
+
+@login_required
+def profile_view(request):
+    if request.method == 'POST':
+        u_form = UserUpdateForm(request.POST, instance=request.user)
+        p_form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user.profile)
+        
+        if u_form.is_valid() and p_form.is_valid():
+            u_form.save()
+            p_form.save()
+            messages.success(request, '✅ Профиль успешно обновлён!')
+            return redirect('profile')
+    else:
+        u_form = UserUpdateForm(instance=request.user)
+        p_form = ProfileUpdateForm(instance=request.user.profile)
+        
+    return render(request, 'core/profile.html', {
+        'u_form': u_form, 
+        'p_form': p_form
+    })
