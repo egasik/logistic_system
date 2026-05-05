@@ -1,0 +1,34 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block admin_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3>🚚 Бренды / Перевозчики</h3>
+    <a href="{% url 'admin_brand_add' %}" class="btn btn-success">Добавить бренд</a>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr><th>Название</th><th>Описание</th><th>Статус</th><th>Товаров</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for brand in brands %}
+                <tr>
+                    <td>{{ brand.name }}</td>
+                    <td>{{ brand.description|default:'—' }}</td>
+                    <td>{% if brand.is_active %}<span class="badge bg-success">Активен</span>{% else %}<span class="badge bg-secondary">Отключен</span>{% endif %}</td>
+                    <td>{{ brand.products.count }}</td>
+                    <td>
+                        <a href="{% url 'admin_brand_edit' brand.id %}" class="btn btn-sm btn-outline-primary">✏️</a>
+                        <a href="{% url 'admin_brand_delete' brand.id %}" class="btn btn-sm btn-outline-danger">🗑️</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="text-center text-muted py-4">Брендов пока нет</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

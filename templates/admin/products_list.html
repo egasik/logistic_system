@@ -13,7 +13,7 @@
     <div class="col-md-4">
         <input type="text" name="search" class="form-control" placeholder="Поиск по названию..." value="{{ request.GET.search }}">
     </div>
-    <div class="col-md-3">
+    <div class="col-md-2">
         <select name="category" class="form-select">
             <option value="">Все категории</option>
             {% for cat in categories %}
@@ -23,7 +23,15 @@
             {% endfor %}
         </select>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-2">
+        <select name="brand" class="form-select">
+            <option value="">Все бренды</option>
+            {% for brand in brands %}
+            <option value="{{ brand.id }}" {% if request.GET.brand == brand.id|stringformat:"s" %}selected{% endif %}>{{ brand.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-2">
         <select name="status" class="form-select">
             <option value="">Все статусы</option>
             <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Активен</option>
@@ -31,18 +39,33 @@
         </select>
     </div>
     <div class="col-md-2">
+        <input type="number" name="min_price" class="form-control" placeholder="Цена от" value="{{ request.GET.min_price }}">
+    </div>
+    <div class="col-md-2">
+        <input type="number" name="max_price" class="form-control" placeholder="Цена до" value="{{ request.GET.max_price }}">
+    </div>
+    <div class="col-md-2">
         <button type="submit" class="btn btn-primary w-100">Фильтр</button>
     </div>
 </form>
 
 <!-- Таблица товаров -->
+<form method="post" action="{% url 'admin_products_bulk_action' %}">
+    {% csrf_token %}
 <div class="card">
     <div class="card-body">
+        <div class="d-flex gap-2 mb-3">
+            <button class="btn btn-sm btn-outline-success" name="action" value="activate" type="submit">Активировать выбранные</button>
+            <button class="btn btn-sm btn-outline-warning" name="action" value="deactivate" type="submit">Деактивировать выбранные</button>
+        </div>
         <table class="table table-hover">
             <thead>
                 <tr>
+                    <th><input type="checkbox" onclick="document.querySelectorAll('.product-checkbox').forEach(cb => cb.checked = this.checked)"></th>
                     <th>Изображение</th>
                     <th>Название</th>
+                    <th>Артикул</th>
+                    <th>Бренд</th>
                     <th>Категория</th>
                     <th>Цена</th>
                     <th>На складе</th>
@@ -53,6 +76,7 @@
             <tbody>
                 {% for product in products %}
                 <tr>
+                    <td><input class="product-checkbox" type="checkbox" name="selected_products" value="{{ product.id }}"></td>
                     <td>
                         {% if product.image %}
                         <img src="{{ product.image.url }}" alt="" style="width: 50px; height: 50px; object-fit: cover;" class="rounded">
@@ -61,6 +85,8 @@
                         {% endif %}
                     </td>
                     <td>{{ product.name }}</td>
+                    <td>{{ product.article|default:"—" }}</td>
+                    <td>{{ product.brand.name|default:"—" }}</td>
                     <td>{{ product.category.name|default:"—" }}</td>
                     <td>{{ product.price }} ₽</td>
                     <td>
@@ -84,11 +110,26 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="7" class="text-center text-muted">Товары не найдены</td>
+                    <td colspan="10" class="text-center text-muted">Товары не найдены</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+</form>
+
+{% if products.paginator.num_pages > 1 %}
+<nav class="mt-3">
+    <ul class="pagination justify-content-center">
+        {% if products.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page={{ products.previous_page_number }}&{{ query_params }}">Назад</a></li>
+        {% endif %}
+        <li class="page-item active"><span class="page-link">{{ products.number }}</span></li>
+        {% if products.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ products.next_page_number }}&{{ query_params }}">Вперед</a></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
 {% endblock %}

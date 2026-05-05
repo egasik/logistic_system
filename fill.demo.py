@@ -1,15 +1,17 @@
 import os
-import sys
 import django
 import shutil
 from pathlib import Path
+from django.db import connection
+from django.utils import timezone
+from django.utils.text import slugify
 
 # Настройка окружения Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'logistics_system.settings')
 django.setup()
 
 from django.conf import settings
-from core.models import Category, Product, Stock
+from core.models import Category, Product
 
 # === НАСТРОЙКИ ИЗОБРАЖЕНИЙ ===
 # Здесь указываем ПУТИ к картинкам внутри репозитория.
@@ -51,6 +53,16 @@ PRODUCTS = [
     ("Игра Монополия", "Классическая экономическая настолка.", 2190, "Детские товары"),
 ]
 
+
+def unique_slug(model, base_value):
+    base = slugify(base_value) or "item"
+    candidate = base
+    idx = 2
+    while model.objects.filter(slug=candidate).exists():
+        candidate = f"{base}-{idx}"
+        idx += 1
+    return candidate
+
 def copy_and_rename_image(relative_src_path, product_id):
     """
     Копирует картинку из репозитория (demo_images/) в media/products/
@@ -70,20 +82,20 @@ def copy_and_rename_image(relative_src_path, product_id):
 
     # Проверяем, существует ли исходный файл
     if not src_file.exists():
-        print(f"   ⚠️ Файл не найден: {src_file}")
+        print(f"   [WARN] Файл не найден: {src_file}")
         return None
 
     try:
         # Копируем файл (перезаписываем, если уже есть)
         shutil.copy2(src_file, dst_file)
-        print(f"   ✅ Скопировано: {relative_src_path} → products/{product_id}.jpg")
+        print(f"   [OK] Скопировано: {relative_src_path} -> products/{product_id}.jpg")
         return f"products/{product_id}.jpg"
     except Exception as e:
-        print(f"   ❌ Ошибка копирования: {e}")
+        print(f"   [ERROR] Ошибка копирования: {e}")
         return None
 
 def fill_data():
-    print("🚀 Начинаем заполнение базы демо-данными (с локальными картинками)...")
+    print("Начинаем заполнение базы демо-данными (с локальными картинками)...")
 
     CATEGORIES = [
         ("Техника и электроника", "Смартфоны, ноутбуки и гаджеты."),
@@ -96,29 +108,56 @@ def fill_data():
     # 1. Категории
     cat_objects = {}
     for name, desc in CATEGORIES:
-        cat, _ = Category.objects.get_or_create(name=name, defaults={'description': desc})
+        cat, _ = Category.objects.get_or_create(
+            name=name,
+            defaults={'description': desc, 'slug': unique_slug(Category, name)}
+        )
         cat_objects[name] = cat
 
-    # 2. Товары + Остатки + Картинки
+    # 2. Товары + Картинки
     for name, desc, price, cat_name in PRODUCTS:
         category = cat_objects.get(cat_name)
         if category:
-            # Создаем или получаем товар
-            prod, created = Product.objects.get_or_create(
-                name=name,
-                defaults={
-                    'description': desc,
-                    'price': price,
-                    'category': category,
-                    'status': 'active'
-                }
-            )
-
-            # Создаем остаток
-            stock, stock_created = Stock.objects.get_or_create(
-                product=prod,
-                defaults={'quantity': 10, 'reserved': 0, 'min_threshold': 5}
-            )
+            prod = Product.objects.filter(name=name).first()
+            if prod:
+                prod.description = desc
+                prod.price = price
+                prod.category = category
+                if not prod.slug:
+                    prod.slug = unique_slug(Product, name)
+                prod.is_active = True
+                if prod.stock is None:
+                    prod.stock = 10
+                prod.save()
+            else:
+                slug_value = unique_slug(Product, name)
+                now = timezone.now()
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        """
+                        INSERT INTO core_product
+                        (name, description, price, status, image, created_at, category_id, updated_at, article, is_active, brand_id, deleted_at, sku, stock, slug)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        """,
+                        [
+                            name,
+                            desc,
+                            str(price),
+                            'active',
+                            None,
+                            now,
+                            category.id,
+                            now,
+                            f'ART-{slug_value[:24].upper()}',
+                            True,
+                            None,
+                            None,
+                            None,
+                            10,
+                            slug_value,
+                        ],
+                    )
+                prod = Product.objects.get(slug=slug_value)
 
             # === ЛОГИКА КАРТИНОК ===
             image_path = PRODUCT_IMAGES.get(name)
@@ -128,15 +167,18 @@ def fill_data():
                 saved_path = copy_and_rename_image(image_path, prod.id)
                 
                 if saved_path:
-                    # Обновляем поле image у товара
-                    prod.image = saved_path
-                    prod.save(update_fields=['image'])
-                    print(f"   📸 Картинка прикреплена к {name} (ID: {prod.id})")
+                    # В этой БД изображение хранится legacy-полем image в core_product
+                    with connection.cursor() as cursor:
+                        cursor.execute(
+                            "UPDATE core_product SET image = %s WHERE id = %s",
+                            [saved_path, prod.id],
+                        )
+                    print(f"   Картинка прикреплена к {name} (ID: {prod.id})")
 
     print("-" * 30)
-    print("✅ Готово! Все товары созданы с картинками.")
-    print("💡 Картинки хранятся в media/products/{id}.jpg")
-    print("📦 Не забудь добавить media/products/ в Git, чтобы они попали в репозиторий!")
+    print("Готово! Все товары созданы с картинками.")
+    print("Картинки хранятся в media/products/{id}.jpg")
+    print("Не забудь добавить media/products/ в Git, чтобы они попали в репозиторий!")
 
 if __name__ == "__main__":
     fill_data()

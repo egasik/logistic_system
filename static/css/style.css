@@ -702,3 +702,39 @@ input[type="number"] {
     color: #fff;
     border-color: #8B3A2A;
 }
+
+/* Fix sidebar scaling/scroll artifacts on catalog */
+.catalog-row .sidebar-card {
+    max-height: none !important;
+    overflow: visible !important;
+}
+
+/* Catalog layout stabilization */
+.catalog-layout {
+    align-items: flex-start;
+}
+
+.catalog-layout .sidebar-card {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+}
+
+.catalog-layout .sidebar-card .card-body,
+.catalog-layout .sidebar-card .list-group {
+    flex: 0 0 auto;
+}
+
+.catalog-layout .product-card {
+    height: 100%;
+}
+
+.catalog-layout .product-card .card-body {
+    display: flex;
+    flex-direction: column;
+}
+
+main.container {
+    min-height: calc(100vh - 260px);
+}

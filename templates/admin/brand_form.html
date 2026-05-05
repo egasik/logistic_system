@@ -1,0 +1,24 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block admin_content %}
+<h3>{% if action == 'add' %}Добавить бренд{% else %}Редактировать бренд{% endif %}</h3>
+<form method="post" class="card mt-3">
+    {% csrf_token %}
+    <div class="card-body">
+        <div class="mb-3">
+            <label class="form-label">Название</label>
+            <input type="text" class="form-control" name="name" value="{{ brand.name|default:'' }}" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Описание</label>
+            <textarea class="form-control" name="description" rows="3">{{ brand.description|default:'' }}</textarea>
+        </div>
+        <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" name="is_active" id="isActive" {% if action == 'add' or brand.is_active %}checked{% endif %}>
+            <label class="form-check-label" for="isActive">Активен</label>
+        </div>
+        <button class="btn btn-primary" type="submit">Сохранить</button>
+        <a class="btn btn-outline-secondary" href="{% url 'admin_brands' %}">Отмена</a>
+    </div>
+</form>
+{% endblock %}

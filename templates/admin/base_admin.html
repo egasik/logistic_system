@@ -13,6 +13,12 @@
     <a href="{% url 'admin_categories' %}" class="list-group-item list-group-item-action {% if active_tab == 'categories' %}active{% endif %}">
         📂 Категории
     </a>
+    <a href="{% url 'admin_brands' %}" class="list-group-item list-group-item-action {% if active_tab == 'brands' %}active{% endif %}">
+        🚚 Бренды/перевозчики
+    </a>
+    <a href="{% url 'admin_stock_history' %}" class="list-group-item list-group-item-action {% if active_tab == 'stock_history' %}active{% endif %}">
+        🧾 Журнал остатков
+    </a>
     <a href="{% url 'admin_orders' %}" class="list-group-item list-group-item-action {% if active_tab == 'orders' %}active{% endif %}">
         📋 Заказы клиентов
     </a>

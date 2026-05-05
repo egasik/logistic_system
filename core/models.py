@@ -1,251 +1,33 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from django.contrib.auth.base_user import BaseUserManager
-from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-# ------------------ КАСТОМНЫЙ МЕНЕДЖЕР ПОЛЬЗОВАТЕЛЕЙ ------------------
-class CustomUserManager(BaseUserManager):
-    def create_user(self, email, password=None, **extra_fields):
-        if not email:
-            raise ValueError('Поле Email должно быть заполнено')
-        email = self.normalize_email(email)
-        user = self.model(email=email, **extra_fields)
-        user.set_password(password)
-        user.save(using=self._db)
-        return user
-
-    def create_superuser(self, email, password=None, **extra_fields):
-        extra_fields.setdefault('is_staff', True)
-        extra_fields.setdefault('is_superuser', True)
-        extra_fields.setdefault('is_active', True)
-        return self.create_user(email, password, **extra_fields)
-
-
-# ------------------ ПОЛЬЗОВАТЕЛИ ------------------
 class User(AbstractUser):
-    objects = CustomUserManager()
     username = None
-    email = models.EmailField('Email адрес', unique=True)
-    role = models.CharField('Роль', max_length=20, choices=[
-        ('client', 'Клиент'),
-        ('manager', 'Менеджер'),
-        ('warehouse', 'Кладовщик'),
-        ('admin', 'Администратор'),
-    ], default='client')
-    phone = models.CharField('Телефон', max_length=20, blank=True, null=True)
-    address = models.TextField('Адрес доставки', blank=True, null=True)
-    avatar = models.ImageField('Аватар', upload_to='avatars/', blank=True, null=True)
+    email = models.EmailField(unique=True)
+    phone = models.CharField(max_length=32, blank=True, null=True)
+    address = models.CharField(max_length=500, blank=True, null=True)
+    is_admin = models.BooleanField(default=False)
+    is_blocked = models.BooleanField(default=False)
+    remember_token = models.CharField(max_length=100, blank=True, null=True)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['first_name', 'last_name']
 
     def __str__(self):
-        return f"{self.first_name} {self.last_name} ({self.get_role_display()})"
-
-    class Meta:
-        verbose_name = 'Пользователь'
-        verbose_name_plural = 'Пользователи'
-
-
-# ------------------ КАТЕГОРИИ ------------------
-class Category(models.Model):
-    name = models.CharField('Название категории', max_length=100)
-    description = models.TextField('Описание', blank=True)
-    created_at = models.DateTimeField('Дата создания', auto_now_add=True)
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        verbose_name = 'Категория'
-        verbose_name_plural = 'Категории'
-        ordering = ['name']
-
-
-# ------------------ ТОВАРЫ ------------------
-class Product(models.Model):
-    STATUS_CHOICES = [
-        ('active', 'Активен'),
-        ('inactive', 'Неактивен'),
-        ('discontinued', 'Снят с производства'),
-        ('out_of_stock', 'Нет в наличии'),
-    ]
-    
-    name = models.CharField('Название', max_length=200)
-    description = models.TextField('Описание', blank=True)
-    price = models.DecimalField('Цена', max_digits=10, decimal_places=2)
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, verbose_name='Категория', related_name='products')
-    status = models.CharField('Статус', max_length=20, choices=STATUS_CHOICES, default='active')
-    image = models.ImageField('Изображение', upload_to='products/', blank=True, null=True)
-    created_at = models.DateTimeField('Дата создания', auto_now_add=True)
-    updated_at = models.DateTimeField('Дата обновления', auto_now=True)
-
-    def __str__(self):
-        return self.name
-
-    class Meta:
-        verbose_name = 'Товар'
-        verbose_name_plural = 'Товары'
-        ordering = ['name']
-
-
-# ------------------ СКЛАД ------------------
-class Stock(models.Model):
-    product = models.OneToOneField(Product, on_delete=models.CASCADE, related_name='stock', verbose_name='Товар')
-    quantity = models.PositiveIntegerField('Количество на складе', default=0)
-    reserved = models.PositiveIntegerField('Зарезервировано', default=0)
-    min_threshold = models.PositiveIntegerField('Минимальный порог', default=5)
-
-    def __str__(self):
-        return f"{self.product.name} | Остаток: {self.quantity} | Резерв: {self.reserved}"
-
-    class Meta:
-        verbose_name = 'Складской остаток'
-        verbose_name_plural = 'Складские остатки'
-
-
-# ------------------ ПОСТАВЩИКИ И ПОСТАВКИ ------------------
-class Supplier(models.Model):
-    company_name = models.CharField('Название компании', max_length=150)
-    contact_person = models.CharField('Контактное лицо', max_length=100)
-    phone = models.CharField('Телефон', max_length=20)
-    email = models.EmailField('Email', blank=True)
-    address = models.TextField('Адрес', blank=True)
-    terms = models.TextField('Условия поставки', blank=True)
-
-    def __str__(self):
-        return self.company_name
-
-    class Meta:
-        verbose_name = 'Поставщик'
-        verbose_name_plural = 'Поставщики'
-
-
-class Supply(models.Model):
-    STATUS_CHOICES = [
-        ('pending', 'Ожидается'),
-        ('received', 'Принята'),
-        ('cancelled', 'Отменена'),
-    ]
-    
-    supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, verbose_name='Поставщик')
-    invoice_number = models.CharField('Номер накладной', max_length=50, unique=True)
-    date = models.DateField('Дата поставки')
-    status = models.CharField('Статус', max_length=20, choices=STATUS_CHOICES, default='pending')
-    created_at = models.DateTimeField('Дата создания', auto_now_add=True)
-
-    def __str__(self):
-        return f"Поставка #{self.invoice_number} от {self.supplier}"
-
-    class Meta:
-        verbose_name = 'Поставка'
-        verbose_name_plural = 'Поставки'
-
-
-class SupplyItem(models.Model):
-    supply = models.ForeignKey(Supply, on_delete=models.CASCADE, related_name='items')
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, verbose_name='Товар')
-    quantity = models.PositiveIntegerField('Количество')
-    purchase_price = models.DecimalField('Цена закупки', max_digits=10, decimal_places=2)
-
-    def __str__(self):
-        return f"{self.product.name} x {self.quantity}"
-
-DELIVERY_CHOICES = [
-    ('standard', 'Стандартная (3-5 дней)'),
-    ('express', 'Экспресс (1-2 дня)'),
-    ('premium', 'Премиум (в день заказа)'),
-    ('pickup', 'Самовывоз со склада'),
-]
-
-DELIVERY_PRICES = {
-    'standard': 0,
-    'express': 350,
-    'premium': 750,
-    'pickup': 0,
-}
-# ------------------ ЗАКАЗЫ ------------------
-class Order(models.Model):
-    STATUS_CHOICES = [
-        ('new', 'Новый'),
-        ('paid', 'Оплачен'),
-        ('processing', 'На комплектации'),
-        ('shipped', 'Отгружен'),
-        ('delivered', 'Доставлен'),
-        ('cancelled', 'Отменен'),
-        ('returned', 'Возвращен'),
-    ]
-    
-    client = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='orders', verbose_name='Клиент')
-    created_at = models.DateTimeField('Дата заказа', auto_now_add=True)
-    updated_at = models.DateTimeField('Дата обновления', auto_now=True)
-    status = models.CharField('Статус', max_length=20, choices=STATUS_CHOICES, default='new')
-    delivery_address = models.TextField('Адрес доставки')
-    phone = models.CharField('Контактный телефон', max_length=20)
-    email = models.EmailField('Email')
-    comment = models.TextField('Комментарий', blank=True)
-    delivery_method = models.CharField('Способ доставки', max_length=20, choices=DELIVERY_CHOICES, default='standard')
-    delivery_cost = models.DecimalField('Стоимость доставки', max_digits=10, decimal_places=2, default=0)
-    total_amount = models.DecimalField('Общая сумма', max_digits=10, decimal_places=2, default=0)
-
-    def __str__(self):
-        return f"Заказ #{self.pk} от {self.created_at.strftime('%d.%m.%Y %H:%M')}"
-
-    class Meta:
-        verbose_name = 'Заказ'
-        verbose_name_plural = 'Заказы'
-        ordering = ['-created_at']
-
-
-class OrderItem(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
-    product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True)
-    quantity = models.PositiveIntegerField('Количество')
-    price = models.DecimalField('Цена на момент заказа', max_digits=10, decimal_places=2)
-
-    def __str__(self):
-        return f"{self.product} x {self.quantity}"
-
-
-# ------------------ ТРАНЗАКЦИИ ------------------
-class Transaction(models.Model):
-    STATUS_CHOICES = [
-        ('pending', 'Ожидает'),
-        ('success', 'Успешно'),
-        ('failed', 'Ошибка'),
-    ]
-    
-    code = models.CharField('Код транзакции', max_length=30, unique=True)
-    client = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name='Клиент')
-    order = models.OneToOneField(Order, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Заказ')
-    amount = models.DecimalField('Сумма', max_digits=10, decimal_places=2)
-    status = models.CharField('Статус', max_length=20, choices=STATUS_CHOICES, default='pending')
-    created_at = models.DateTimeField('Дата создания', auto_now_add=True)
-
-    def __str__(self):
-        return f"Транзакция {self.code} | {self.amount} ₽"
-
-    class Meta:
-        verbose_name = 'Транзакция'
-        verbose_name_plural = 'Транзакции'
+        return self.email
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
-    avatar = models.ImageField(upload_to='avatars/', blank=True, null=True, verbose_name="Аватар")
-    phone = models.CharField(max_length=18, blank=True, verbose_name="Телефон")
-    address = models.TextField(blank=True, verbose_name="Адрес доставки")
-    bio = models.TextField(blank=True, verbose_name="О себе")
-
-    class Meta:
-        verbose_name = "Профиль"
-        verbose_name_plural = "Профили"
+    bio = models.TextField(blank=True)
+    avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f'{self.user.username} | Профиль'
+        return f'{self.user.email} | Профиль'
 
-# Автоматически создаём профиль при регистрации нового пользователя
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
@@ -254,3 +36,96 @@ def create_user_profile(sender, instance, created, **kwargs):
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
     instance.profile.save()
+
+class Category(models.Model):
+    name = models.CharField(max_length=255)
+    slug = models.SlugField(unique=True)
+    description = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
+
+class Brand(models.Model):
+    name = models.CharField(max_length=255)
+    slug = models.SlugField(unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
+
+class Product(models.Model):
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products')
+    brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, blank=True, related_name='products')
+    name = models.CharField(max_length=255)
+    slug = models.SlugField(unique=True)
+    description = models.TextField(blank=True, null=True)
+    price = models.DecimalField(max_digits=12, decimal_places=2)
+    stock = models.PositiveIntegerField(default=0)
+    sku = models.CharField(max_length=64, blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
+
+class ProductImage(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')
+    path = models.CharField(max_length=255)
+    sort_order = models.PositiveSmallIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'Изображение для {self.product.name}'
+
+class CartItem(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='cart_items')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('user', 'product')
+
+    def __str__(self):
+        return f'{self.product.name} ({self.quantity})'
+
+class Order(models.Model):
+    STATUS_CHOICES = [
+        ('new', 'Новый'),
+        ('processing', 'В обработке'),
+        ('shipped', 'Отправлен'),
+        ('delivered', 'Доставлен'),
+        ('cancelled', 'Отменён'),
+    ]
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='orders')
+    status = models.CharField(max_length=32, choices=STATUS_CHOICES, default='new')
+    total = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    customer_name = models.CharField(max_length=255)
+    phone = models.CharField(max_length=32)
+    email = models.EmailField()
+    address = models.CharField(max_length=500)
+    notes = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'Заявка #{self.id} | {self.user.email}'
+
+class OrderItem(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
+    product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True)
+    product_name = models.CharField(max_length=255)
+    unit_price = models.DecimalField(max_digits=12, decimal_places=2)
+    quantity = models.PositiveIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'{self.product_name} x {self.quantity}'

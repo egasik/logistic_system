@@ -18,6 +18,9 @@
                 {% endif %}
                 <h4>{{ user_obj.first_name }} {{ user_obj.last_name }}</h4>
                 <span class="badge bg-primary mb-2">{{ user_obj.get_role_display }}</span>
+                {% if user_obj.is_blocked %}
+                <div class="alert alert-danger py-1 px-2 small">Пользователь заблокирован</div>
+                {% endif %}
                 
                 <div class="text-start mt-3">
                     <p><strong>Email:</strong> {{ user_obj.email }}</p>
@@ -28,6 +31,9 @@
                 </div>
                 
                 <a href="{% url 'admin_user_edit' user_obj.id %}" class="btn btn-primary w-100 mt-2">✏️ Редактировать</a>
+                <a href="{% url 'admin_user_toggle_block' user_obj.id %}" class="btn {% if user_obj.is_blocked %}btn-outline-success{% else %}btn-outline-danger{% endif %} w-100 mt-2">
+                    {% if user_obj.is_blocked %}Разблокировать{% else %}Заблокировать{% endif %}
+                </a>
             </div>
         </div>
     </div>

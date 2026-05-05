@@ -1,0 +1,11 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Заказ оформлен{% endblock %}
+
+{% block content %}
+<div class="alert alert-success">
+    Заказ #{{ order.id }} успешно оформлен.
+</div>
+<a href="{% url 'orders_list' %}" class="btn btn-primary">К моим заказам</a>
+<a href="{% url 'catalog' %}" class="btn btn-outline-secondary">В каталог</a>
+{% endblock %}
