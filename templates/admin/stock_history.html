@@ -1,0 +1,40 @@
+{% extends 'admin/base_admin.html' %}
+
+{% block admin_content %}
+<h3 class="mb-3">🧾 Журнал изменений остатков</h3>
+<form method="get" class="row g-2 mb-3">
+    <div class="col-md-6">
+        <select class="form-select" name="product" onchange="this.form.submit()">
+            <option value="">Все товары</option>
+            {% for p in products %}
+            <option value="{{ p.id }}" {% if request.GET.product == p.id|stringformat:'s' %}selected{% endif %}>{{ p.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</form>
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-sm mb-0">
+            <thead>
+                <tr><th>Дата</th><th>Товар</th><th>Тип</th><th>Было</th><th>Стало</th><th>Δ</th><th>Комментарий</th><th>Кто</th></tr>
+            </thead>
+            <tbody>
+                {% for m in movements %}
+                <tr>
+                    <td>{{ m.created_at|date:"d.m.Y H:i" }}</td>
+                    <td>{{ m.product.name }}</td>
+                    <td>{{ m.get_movement_type_display }}</td>
+                    <td>{{ m.old_quantity }}</td>
+                    <td>{{ m.new_quantity }}</td>
+                    <td>{{ m.quantity }}</td>
+                    <td>{{ m.comment|default:"—" }}</td>
+                    <td>{{ m.created_by.email|default:"Система" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" class="text-center py-3 text-muted">Записей нет</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Оформление заказа{% endblock %}
+
+{% block content %}
+<h2 class="mb-3">Оформление заказа</h2>
+
+{% if cart_items %}
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Комментарий</label>
+                        <textarea class="form-control" name="notes" rows="4"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-success">Подтвердить заказ</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card">
+            <div class="card-header">Состав заказа</div>
+            <ul class="list-group list-group-flush">
+                {% for item in cart_items %}
+                <li class="list-group-item d-flex justify-content-between">
+                    <span>{{ item.product.name }} x {{ item.quantity }}</span>
+                    <span>{{ item.product.price }} ₽</span>
+                </li>
+                {% endfor %}
+                <li class="list-group-item d-flex justify-content-between fw-bold">
+                    <span>Итого</span>
+                    <span>{{ total }} ₽</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info">Корзина пуста. Оформлять нечего.</div>
+{% endif %}
+{% endblock %}

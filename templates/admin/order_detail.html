@@ -68,7 +68,7 @@
                             <td>{{ item.product.name|default:"Товар удален" }}</td>
                             <td class="text-center">{{ item.quantity }}</td>
                             <td class="text-end">{{ item.price }} ₽</td>
-                            <td class="text-end"><strong>{{ item.quantity|floatformat:2 }} ₽</strong></td>
+                            <td class="text-end"><strong>{% widthratio item.price 1 item.quantity %} ₽</strong></td>
                         </tr>
                         {% endfor %}
                     </tbody>

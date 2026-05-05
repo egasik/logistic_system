@@ -1,0 +1,29 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Мои заказы{% endblock %}
+
+{% block content %}
+<h2 class="mb-3">Мои заказы</h2>
+
+{% if orders %}
+<div class="list-group">
+    {% for order in orders %}
+    <div class="list-group-item mb-2">
+        <div class="d-flex justify-content-between">
+            <div>
+                <div class="fw-bold">Заказ #{{ order.id }}</div>
+                <div class="text-muted small">{{ order.created_at|date:"d.m.Y H:i" }}</div>
+                <div class="small">{{ order.customer_name }} | {{ order.phone }}</div>
+            </div>
+            <div class="text-end">
+                <span class="badge bg-secondary">{{ order.get_status_display }}</span>
+                <div class="fw-bold mt-2">{{ order.total }} ₽</div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-info">У вас пока нет заказов.</div>
+{% endif %}
+{% endblock %}

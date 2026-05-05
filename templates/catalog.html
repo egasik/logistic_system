@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'core/base.html' %}
 
 {% block title %}Каталог товаров{% endblock %}
 
@@ -43,7 +43,7 @@
                     <label class="form-label small">Наличие</label>
                     <select name="status" class="form-select form-select-sm" onchange="document.getElementById('filterForm').submit()">
                         <option value="">Все</option>
-                        <option value="active" {% if current_status == 'active' %}selected{% endif %}>✅ В наличии</option>
+                        <option value="in_stock" {% if current_status == 'in_stock' %}selected{% endif %}>✅ В наличии</option>
                         <option value="out_of_stock" {% if current_status == 'out_of_stock' %}selected{% endif %}>❌ Нет в наличии</option>
                     </select>
                 </div>
@@ -93,7 +93,7 @@
                 {% if current_category %}
                 <span class="badge bg-primary">📂 Категория #{{ current_category }}</span>
                 {% endif %}
-                {% if current_status == 'active' %}
+                {% if current_status == 'in_stock' %}
                 <span class="badge bg-success">✅ В наличии</span>
                 {% elif current_status == 'out_of_stock' %}
                 <span class="badge bg-danger">❌ Нет в наличии</span>

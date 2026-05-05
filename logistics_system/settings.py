@@ -10,8 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
-from pathlib import Path
 import os
+from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -40,26 +40,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'core',  # 2. Приложение core должно быть здесь
 ]
-"""
-# 3. Настройка БД (оставьте вашу конфигурацию MySQL)
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': '23009_logistic_db',
-        'USER': '23009',
-        'PASSWORD': 'bfnqxt',
-        'HOST': 'web.edu',
-        'PORT': '3306',
-        'OPTIONS': {
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-            'charset': 'utf8mb4',
-        },
-    }
-}
-"""
-# 4. Настройка медиафайлов (для аватаров и фото товаров)
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -81,6 +61,7 @@ TEMPLATES = [
             'context_processors': [
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
+                'django.template.context_processors.media',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
@@ -91,22 +72,38 @@ WSGI_APPLICATION = 'logistics_system.wsgi.application'
 
 
 # Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+# Default: MySQL (for MySQL Workbench workflow).
+# Fallback to SQLite is enabled for local startup when MySQL driver is unavailable.
+DB_ENGINE = os.getenv("DB_ENGINE", "mysql").lower()
+MYSQL_DRIVER_AVAILABLE = True
+if DB_ENGINE == "mysql":
+    try:
+        import MySQLdb  # type: ignore # noqa: F401
+    except ImportError:
+        MYSQL_DRIVER_AVAILABLE = False
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'logistic_db',
-        'USER': 'logistics_user',
-        'PASSWORD': 'DevPass2026!',
-        'HOST': '127.0.0.1',
-        'PORT': '3306',
-        'OPTIONS': {
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-            'charset': 'utf8mb4',
-        },
+if DB_ENGINE == "sqlite" or (DB_ENGINE == "mysql" and not MYSQL_DRIVER_AVAILABLE):
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.mysql",
+            "NAME": os.getenv("MYSQL_DB", "logistic_db"),
+            "USER": os.getenv("MYSQL_USER", "logistics_user"),
+            "PASSWORD": os.getenv("MYSQL_PASSWORD", "DevPass2026!"),
+            "HOST": os.getenv("MYSQL_HOST", "127.0.0.1"),
+            "PORT": os.getenv("MYSQL_PORT", "3306"),
+            "OPTIONS": {
+                "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
+                "charset": "utf8mb4",
+            },
+        }
+    }
 
 
 # Password validation
@@ -143,29 +140,19 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
-
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
-
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-LOGIN_REDIRECT_URL = 'catalog'
-# Перенаправление после выхода (опционально)
-LOGOUT_REDIRECT_URL = 'catalog'
-CART_SESSION_ID = 'cart'
-# В конце settings.py добавьте:
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
-# В конце файла settings.py
-TIME_ZONE = 'Asia/Irkutsk'  # UTC+5 (Екатеринбургское время)
-# Или если нужно именно московское время (UTC+3):
-# TIME_ZONE = 'Europe/Moscow'
 
-USE_TZ = True  # Django будет хранить время в UTC, но отображать в заданном поясе
+# Default primary key field type
+# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+LOGIN_REDIRECT_URL = 'catalog'
+LOGOUT_REDIRECT_URL = 'catalog'
+CART_SESSION_ID = 'cart'
 LANGUAGE_CODE = 'ru-ru'
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+TIME_ZONE = 'Europe/Moscow'
