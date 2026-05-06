@@ -93,10 +93,10 @@ else:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.mysql",
-            "NAME": os.getenv("MYSQL_DB", "logistic_db"),
-            "USER": os.getenv("MYSQL_USER", "logistics_user"),
-            "PASSWORD": os.getenv("MYSQL_PASSWORD", "DevPass2026!"),
-            "HOST": os.getenv("MYSQL_HOST", "127.0.0.1"),
+            "NAME": os.getenv("MYSQL_DB", "23009_logistic_db"),
+            "USER": os.getenv("MYSQL_USER", "23009"),
+            "PASSWORD": os.getenv("MYSQL_PASSWORD", "bfnqxt"),
+            "HOST": os.getenv("MYSQL_HOST", "web.edu"),
             "PORT": os.getenv("MYSQL_PORT", "3306"),
             "OPTIONS": {
                 "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",

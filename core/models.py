@@ -1,10 +1,46 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
+# =============================================================================
+# 👤 МЕНЕДЖЕР ПОЛЬЗОВАТЕЛЕЙ (обязателен при замене username на email)
+# =============================================================================
+class UserManager(BaseUserManager):
+    use_in_migrations = True
+
+    def _create_user(self, email, password, **extra_fields):
+        if not email:
+            raise ValueError('The given email must be set')
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_user(self, email, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', False)
+        extra_fields.setdefault('is_superuser', False)
+        return self._create_user(email, password, **extra_fields)
+
+    def create_superuser(self, email, password, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError('Superuser must have is_staff=True.')
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError('Superuser must have is_superuser=True.')
+
+        return self._create_user(email, password, **extra_fields)
+
+# =============================================================================
+# 👤 ПОЛЬЗОВАТЕЛЬ
+# =============================================================================
 class User(AbstractUser):
     username = None
+    objects = UserManager()  # ← Подключаем кастомный менеджер
+    
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=32, blank=True, null=True)
     address = models.CharField(max_length=500, blank=True, null=True)
@@ -18,6 +54,9 @@ class User(AbstractUser):
     def __str__(self):
         return self.email
 
+# =============================================================================
+# 👤 ПРОФИЛЬ
+# =============================================================================
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     bio = models.TextField(blank=True)
@@ -37,6 +76,9 @@ def create_user_profile(sender, instance, created, **kwargs):
 def save_user_profile(sender, instance, **kwargs):
     instance.profile.save()
 
+# =============================================================================
+# 📦 СПРАВОЧНИКИ И КАТАЛОГ
+# =============================================================================
 class Category(models.Model):
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True)
@@ -83,6 +125,9 @@ class ProductImage(models.Model):
     def __str__(self):
         return f'Изображение для {self.product.name}'
 
+# =============================================================================
+# 🛒 КОРЗИНА И ЗАКАЗЫ
+# =============================================================================
 class CartItem(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='cart_items')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
