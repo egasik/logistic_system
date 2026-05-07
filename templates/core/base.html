@@ -23,6 +23,15 @@
                         <li class="nav-item"><a class="nav-link" href="{% url 'my_orders' %}">Мои заявки</a></li>
                     {% endif %}
                 </ul>
+                 {% if user.is_authenticated and user.is_admin %}
+    <ul class="navbar-nav me-3">
+        <li class="nav-item">
+            <a href="/admin/" class="btn btn-sm btn-outline-light border-0" title="Панель управления">
+                ⚙️ Админ-панель
+            </a>
+        </li>
+    </ul>
+    {% endif %}
                 <li class="nav-item"><a class="nav-link" href="{% url 'profile' %}">Профиль</a></li>
                 <ul class="navbar-nav">
                     {% if user.is_authenticated %}

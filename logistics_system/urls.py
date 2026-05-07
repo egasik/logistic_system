@@ -5,7 +5,8 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('core.urls')),  # ← Все маршруты идут из приложения core
+    
+    path('', include('core.urls')),
 ]
 
 if settings.DEBUG:

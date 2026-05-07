@@ -1,5 +1,3 @@
-import os
-import uuid
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -7,11 +5,12 @@ from django.contrib import messages
 from django.db import transaction
 from django.core.files.storage import default_storage
 from django.conf import settings
+from django.db.models import Q, Sum, Count
 from .models import (
     Product, Category, Carrier, CartItem, Order, OrderItem, User, Profile
 )
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from django.db.models import Q, Sum, Count
+from .forms import CustomUserCreationForm  
+from django.contrib.auth.forms import AuthenticationForm
 
 
 # ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
@@ -262,20 +261,18 @@ def logout_view(request):
 
 
 def register_view(request):
-    """Регистрация нового пользователя"""
+    """Страница регистрации"""
     if request.method == 'POST':
-        form = UserCreationForm(request.POST)
+        form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save(commit=False)
-            user.email = form.cleaned_data.get('email')
-            user.name = f"{form.cleaned_data.get('first_name', '')} {form.cleaned_data.get('last_name', '')}".strip()
             user.save()
-            Profile.objects.create(user=user)
+            from django.contrib.auth import login
             login(request, user)
             messages.success(request, 'Регистрация успешна! Добро пожаловать.')
             return redirect('index')
     else:
-        form = UserCreationForm()
+        form = CustomUserCreationForm()
     return render(request, 'core/register.html', {'form': form})
 
 

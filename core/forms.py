@@ -1,29 +1,34 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import User, Profile
+from .models import User
 
-class UserRegisterForm(UserCreationForm):
-    email = forms.EmailField(label="Email", required=True, widget=forms.EmailInput(attrs={'class': 'form-control'}))
-    first_name = forms.CharField(label="Имя", max_length=150, widget=forms.TextInput(attrs={'class': 'form-control'}))
-    last_name = forms.CharField(label="Фамилия", max_length=150, widget=forms.TextInput(attrs={'class': 'form-control'}))
+class CustomUserCreationForm(UserCreationForm):
+    """Форма регистрации для кастомной модели User"""
+    
+    email = forms.EmailField(
+        required=True,
+        widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'your@email.com'})
+    )
+    first_name = forms.CharField(
+        required=True,
+        max_length=150,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Имя'})
+    )
+    last_name = forms.CharField(
+        required=True,
+        max_length=150,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Фамилия'})
+    )
     
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'email', 'password1', 'password2']
-
-class UserUpdateForm(forms.ModelForm):
-    phone = forms.CharField(label="Телефон", max_length=32, required=False, widget=forms.TextInput(attrs={'class': 'form-control'}))
-    address = forms.CharField(label="Адрес доставки", max_length=500, required=False, widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3}))
+        fields = ('email', 'first_name', 'last_name', 'password1', 'password2')
     
-    class Meta:
-        model = User
-        fields = ['email', 'first_name', 'last_name', 'phone', 'address']
-
-class ProfileUpdateForm(forms.ModelForm):
-    class Meta:
-        model = Profile
-        fields = ['bio', 'avatar']
-        widgets = {
-            'bio': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
-            'avatar': forms.FileInput(attrs={'class': 'form-control'})
-        }
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.email = self.cleaned_data['email']
+        # username отключён, поэтому задаём email как идентификатор
+        user.username = user.email  # временно, чтобы не было ошибок валидации
+        if commit:
+            user.save()
+        return user

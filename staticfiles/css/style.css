@@ -812,3 +812,16 @@ main.container {
 .profile-page .row {
     align-items: flex-start !important;
 }
+/* Кнопка админ-панели в шапке */
+.navbar .btn-outline-light {
+    border-color: var(--color-2) !important;
+    color: var(--color-2) !important;
+    font-size: 0.85rem;
+    padding: 0.35rem 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.navbar .btn-outline-light:hover {
+    background: var(--color-2) !important;
+    color: var(--color-5) !important;
+}
