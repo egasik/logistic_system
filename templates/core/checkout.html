@@ -1,45 +1,18 @@
 {% extends 'core/base.html' %}
-
-{% block title %}Оформление заказа{% endblock %}
-
 {% block content %}
-<h2 class="mb-3">Оформление заказа</h2>
-
-{% if cart_items %}
-<div class="row g-4">
-    <div class="col-lg-7">
-        <div class="card">
-            <div class="card-body">
-                <form method="post">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label class="form-label">Комментарий</label>
-                        <textarea class="form-control" name="notes" rows="4"></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-success">Подтвердить заказ</button>
-                </form>
-            </div>
-        </div>
+<h3>Оформление заявки</h3>
+<form method="post" class="bg-white p-4 rounded shadow-sm">
+    {% csrf_token %}
+    <div class="row g-3">
+        <div class="col-md-6"><label>ФИО</label><input name="name" class="form-control" value="{{ user.name }}" required></div>
+        <div class="col-md-6"><label>Телефон</label><input name="phone" class="form-control" value="{{ user.phone }}" required></div>
+        <div class="col-md-6"><label>Email</label><input name="email" type="email" class="form-control" value="{{ user.email }}" required></div>
+        <div class="col-md-6"><label>Адрес доставки</label><input name="address" class="form-control" value="{{ user.address }}" required></div>
+        <div class="col-12"><label>Примечания</label><textarea name="notes" class="form-control" rows="2"></textarea></div>
     </div>
-    <div class="col-lg-5">
-        <div class="card">
-            <div class="card-header">Состав заказа</div>
-            <ul class="list-group list-group-flush">
-                {% for item in cart_items %}
-                <li class="list-group-item d-flex justify-content-between">
-                    <span>{{ item.product.name }} x {{ item.quantity }}</span>
-                    <span>{{ item.product.price }} ₽</span>
-                </li>
-                {% endfor %}
-                <li class="list-group-item d-flex justify-content-between fw-bold">
-                    <span>Итого</span>
-                    <span>{{ total }} ₽</span>
-                </li>
-            </ul>
-        </div>
-    </div>
-</div>
-{% else %}
-<div class="alert alert-info">Корзина пуста. Оформлять нечего.</div>
-{% endif %}
+    <hr>
+    <p class="fs-5">К оплате: <strong>{{ total|floatformat:2 }} ₽</strong></p>
+    <button type="submit" class="btn btn-primary">Подтвердить заявку</button>
+    <a href="{% url 'cart' %}" class="btn btn-secondary">Назад</a>
+</form>
 {% endblock %}

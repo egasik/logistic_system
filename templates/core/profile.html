@@ -1,56 +1,117 @@
-{% extends 'base.html' %}
-{% block title %}Мой профиль{% endblock %}
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Мой профиль — LogisticsPro{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-6">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-primary text-white text-center py-3">
-                    <h4 class="mb-0">👤 Настройки профиля</h4>
+<div class="profile-page">
+<div class="row">
+    <!-- Левая колонка: аватар и данные -->
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-header">Личные данные</div>
+            <div class="card-body text-center">
+                <!-- Аватар -->
+                <div class="mb-3">
+                    {% if user.profile.avatar %}
+                        <img src="/media/{{ user.profile.avatar }}" alt="Аватар" 
+                             class="rounded-circle mb-2" width="120" height="120" style="object-fit: cover;">
+                    {% else %}
+                        <img src="/static/img/default-avatar.png" alt="По умолчанию" 
+                             class="rounded-circle mb-2 bg-light" width="120" height="120">
+                    {% endif %}
                 </div>
-                <div class="card-body p-4">
-                    <!-- Превью аватара -->
-                    <div class="text-center mb-4">
-                        {% if user.profile.avatar %}
-                            <img src="{{ user.profile.avatar.url }}" class="rounded-circle border border-3 shadow-sm" 
-                                 style="width: 120px; height: 120px; object-fit: cover;">
-                        {% else %}
-                            <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center border border-3 shadow-sm" style="width: 120px; height: 120px; font-size: 3rem; color: #8B3A2A;">
-                                    {% if user.first_name %}
-                                        {{ user.first_name|first|upper }}
-                                    {% elif user.email %}
-                                        {{ user.email|first|upper }}
-                                    {% else %}
-                                        ?
-                                    {% endif %}
-                                </div>
-                        {% endif %}
+                
+                <!-- Кнопка загрузки аватара -->
+                <form method="post" enctype="multipart/form-data" class="mb-3">
+                    {% csrf_token %}
+                    <div class="input-group input-group-sm">
+                        <input type="file" name="avatar" class="form-control" accept="image/*" id="avatarInput">
+                        <button class="btn btn-outline-primary" type="submit">Загрузить</button>
                     </div>
+                    <small class="text-muted">JPG, PNG, GIF до 2 МБ</small>
+                </form>
+                
+                <h5 class="mb-1">{{ user.name|default:user.email }}</h5>
+                <p class="text-muted small">{{ user.email }}</p>
+                {% if user.is_admin %}
+                    <span class="badge bg-primary-custom">Администратор</span>
+                {% else %}
+                    <span class="badge bg-secondary">Клиент</span>
+                {% endif %}
+            </div>
+        </div>
 
-                    <form method="post" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        
-                        <h6 class="text-muted mb-3">📝 Основные данные</h6>
-                        {{ u_form.as_p }}
-                        
-                        <hr class="my-4">
-                        
-                        <h6 class="text-muted mb-3">📷 Фото и контакты</h6>
-                        {{ p_form.as_p }}
-                        
-                        <div class="d-grid gap-2 mt-4">
-                            <button type="submit" class="btn btn-primary btn-lg">
-                                💾 Сохранить изменения
-                            </button>
-                            <a href="{% url 'catalog' %}" class="btn btn-outline-secondary">
-                                ← В каталог
-                            </a>
-                        </div>
-                    </form>
-                </div>
+        <div class="card shadow-sm mt-3">
+            <div class="card-header">Контакты</div>
+            <div class="card-body">
+                <p class="mb-2"><strong>Телефон:</strong><br>{{ user.phone|default:"Не указан" }}</p>
+                <p class="mb-0"><strong>Адрес:</strong><br>{{ user.address|default:"Не указан" }}</p>
             </div>
         </div>
     </div>
+
+    <!-- Правая колонка: форма редактирования + заказы -->
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header">Редактировать профиль</div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Имя *</label>
+                            <input type="text" name="name" class="form-control" value="{{ user.name }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" value="{{ user.email }}" disabled>
+                            <small class="text-muted">Email изменить нельзя</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Телефон</label>
+                            <input type="tel" name="phone" class="form-control" value="{{ user.phone }}">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Адрес доставки</label>
+                            <textarea name="address" class="form-control" rows="2">{{ user.address }}</textarea>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-3">Сохранить изменения</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mt-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Мои заявки</span>
+                <a href="{% url 'my_orders' %}" class="btn btn-sm btn-outline-primary">Все заявки</a>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_orders %}
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr><th>№</th><th>Дата</th><th>Статус</th><th>Сумма</th></tr>
+                        </thead>
+                        <tbody>
+                        {% for o in recent_orders %}
+                            <tr>
+                                <td><a href="{% url 'order_detail' o.id %}">#{{ o.id }}</a></td>
+                                <td>{{ o.created_at|date:"d.m.Y" }}</td>
+                                <td><span class="badge bg-info">{{ o.get_status_display }}</span></td>
+                                <td>{{ o.total }} ₽</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                    <p class="text-muted p-3 mb-0">У вас пока нет заявок</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
 </div>
 {% endblock %}

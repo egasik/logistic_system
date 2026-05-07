@@ -93,7 +93,7 @@ else:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.mysql",
-            "NAME": os.getenv("MYSQL_DB", "23009_logistic_db"),
+            "NAME": os.getenv("MYSQL_DB", "23009_logistics_db_new"),
             "USER": os.getenv("MYSQL_USER", "23009"),
             "PASSWORD": os.getenv("MYSQL_PASSWORD", "bfnqxt"),
             "HOST": os.getenv("MYSQL_HOST", "web.edu"),

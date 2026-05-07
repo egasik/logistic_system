@@ -1,54 +1,23 @@
-{% extends 'base.html' %}
-
-{% block title %}{{ product.name }}{% endblock %}
-
+{% extends 'core/base.html' %}
 {% block content %}
-<nav aria-label="breadcrumb">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{% url 'catalog' %}">Каталог</a></li>
-        <li class="breadcrumb-item active">{{ product.name }}</li>
-    </ol>
-</nav>
-
-<div class="row bg-white p-4 rounded shadow-sm">
-    <div class="col-md-5">
-        {% if image_path %}
-            <img src="{{ MEDIA_URL }}{{ image_path }}" class="img-fluid rounded" alt="{{ product.name }}">
-        {% else %}
-            <img src="https://via.placeholder.com/400" class="img-fluid rounded" alt="Нет фото">
-        {% endif %}
+<div class="row">
+    <div class="col-md-6">
+        {% if images %}<img src="/media/{{ images.first.path }}" class="img-fluid rounded shadow" alt="{{ product.name }}">{% endif %}
     </div>
-    <div class="col-md-7">
+    <div class="col-md-6">
         <h2>{{ product.name }}</h2>
-        <span class="badge bg-secondary mb-2">{{ product.category.name|default:"Без категории" }}</span>
-        
-        <!-- Статус наличия -->
-        {% if product.is_active and product.stock > 0 %}
-            <span class="badge bg-success">В наличии: {{ product.stock }} шт.</span>
-        {% elif product.is_active %}
-            <span class="badge bg-danger">✗ Нет в наличии</span>
+        <p class="text-muted">{{ product.category.name }} | {{ product.carrier.name|default:"Без перевозчика" }}</p>
+        <p class="fs-4 fw-bold text-primary">{{ product.price }} ₽</p>
+        <p>{{ product.description }}</p>
+        <p><strong>На складе:</strong> {{ product.stock }} ед.</p>
+        {% if product.stock > 0 %}
+            <form method="post" action="{% url 'add_to_cart' product.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary">Добавить в заявку</button>
+            </form>
         {% else %}
-            <span class="badge bg-secondary">Неактивен</span>
+            <span class="badge bg-secondary fs-6">Нет в наличии</span>
         {% endif %}
-        
-        <h3 class="text-primary my-3">{{ product.price }} ₽</h3>
-        
-        <p class="lead">{{ product.description }}</p>
-        
-        <hr>
-        
-     <!-- Форма добавления в корзину -->
-{% if product.is_active and product.stock > 0 %}
-<a href="{% url 'add_to_cart' product.id %}" class="btn btn-success mb-3">
-    В корзину
-</a>
-{% else %}
-    <div class="alert alert-warning">
-        Товар временно недоступен для заказа
-    </div>
-{% endif %}
-        
-        <a href="{% url 'catalog' %}" class="btn btn-outline-secondary mt-2">← Назад в каталог</a>
     </div>
 </div>
 {% endblock %}

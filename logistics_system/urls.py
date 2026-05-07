@@ -4,9 +4,8 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
-    path('admin/', admin.site.urls),                    # Встроенная админка Django
-    path('accounts/', include('django.contrib.auth.urls')),  # Авторизация
-    path('', include('core.urls')),                     # Наши маршруты (включая /panel/...)
+    path('admin/', admin.site.urls),
+    path('', include('core.urls')),  # ← Все маршруты идут из приложения core
 ]
 
 if settings.DEBUG:

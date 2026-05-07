@@ -1,0 +1,22 @@
+{% extends 'core/base.html' %}
+{% block content %}
+<h3>История заявок</h3>
+{% if orders %}
+<div class="table-responsive bg-white rounded shadow-sm">
+    <table class="table mb-0">
+        <thead><tr><th>№</th><th>Дата</th><th>Статус</th><th>Сумма</th><th>Адрес</th></tr></thead>
+        <tbody>
+        {% for o in orders %}
+            <tr>
+                <td>#{{ o.id }}</td>
+                <td>{{ o.created_at|date:"d.m.Y H:i" }}</td>
+                <td><span class="badge bg-info">{{ o.get_status_display }}</span></td>
+                <td>{{ o.total|floatformat:2 }} ₽</td>
+                <td>{{ o.address|truncatewords:3 }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}<p class="alert alert-info mt-3">Нет оформленных заявок.</p>{% endif %}
+{% endblock %}

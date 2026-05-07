@@ -1,18 +1,49 @@
 {% extends 'core/base.html' %}
+{% load static %}
 
-{% block title %}Вход{% endblock %}
+{% block title %}Вход — LogisticsPro{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-5">
-        <div class="card">
-            <div class="card-header">Вход</div>
-            <div class="card-body">
-                <form method="post">
+    <div class="col-md-5 col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-header text-center py-3">
+                <h4 class="mb-0">Вход в систему</h4>
+            </div>
+            <div class="card-body p-4">
+                {% if form.errors %}
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <strong>Ошибка!</strong> Неверный email или пароль.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endif %}
+                
+                <form method="post" action="{% url 'login' %}">
                     {% csrf_token %}
-                    {{ form.as_p }}
-                    <button type="submit" class="btn btn-primary w-100">Войти</button>
+                    
+                    <div class="mb-3">
+                        <label for="id_username" class="form-label">Email</label>
+                        <input type="email" name="username" class="form-control" id="id_username" 
+                               placeholder="your@email.com" required autofocus>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="id_password" class="form-label">Пароль</label>
+                        <input type="password" name="password" class="form-control" 
+                               id="id_password" placeholder="••••••••" required>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="id_remember" name="remember">
+                        <label class="form-check-label" for="id_remember">Запомнить меня</label>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100 mb-3">Войти</button>
                 </form>
+                
+                <div class="text-center">
+                    <p class="mb-0 small">Нет аккаунта? <a href="{% url 'register' %}" class="text-primary-custom">Зарегистрироваться</a></p>
+                </div>
             </div>
         </div>
     </div>

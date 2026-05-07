@@ -1,50 +1,22 @@
 {% extends 'core/base.html' %}
-
-{% block title %}Корзина{% endblock %}
-
 {% block content %}
-<h2 class="mb-3">Корзина</h2>
-
-{% if cart_items %}
-<div class="card">
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table align-middle">
-                <thead>
-                    <tr>
-                        <th>Товар</th>
-                        <th>Цена</th>
-                        <th>Количество</th>
-                        <th>Сумма</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in cart_items %}
-                    <tr>
-                        <td>{{ item.product.name }}</td>
-                        <td>{{ item.product.price }} ₽</td>
-                        <td>{{ item.quantity }}</td>
-                        <td>{{ item.product.price|floatformat:2 }} x {{ item.quantity }}</td>
-                        <td>
-                            <a href="{% url 'remove_from_cart' item.id %}" class="btn btn-sm btn-outline-danger">Удалить</a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        <div class="d-flex justify-content-between">
-            <a href="{% url 'catalog' %}" class="btn btn-outline-secondary">В каталог</a>
-            <div>
-                <strong>Итого: {{ total }} ₽</strong>
-                <a href="{% url 'checkout' %}" class="btn btn-primary ms-3">Оформить</a>
-            </div>
-        </div>
-    </div>
-</div>
-{% else %}
-<div class="alert alert-info">Корзина пуста.</div>
-<a href="{% url 'catalog' %}" class="btn btn-primary">Перейти в каталог</a>
-{% endif %}
+<h3>Ваша заявка</h3>
+{% if items %}
+<table class="table bg-white rounded shadow-sm">
+    <thead><tr><th>Товар</th><th>Кол-во</th><th>Цена</th><th>Сумма</th><th></th></tr></thead>
+    <tbody>
+    {% for i in items %}
+        <tr>
+            <td>{{ i.product.name }}</td>
+            <td>{{ i.quantity }}</td>
+            <td>{{ i.product.price }} ₽</td>
+            <td>{{ i.product.price|floatformat:2 }} ₽</td>
+            <td><a href="{% url 'remove_from_cart' i.id %}" class="btn btn-sm btn-danger">✕</a></td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+<p class="fs-5 text-end">Итого: <strong>{{ total|floatformat:2 }} ₽</strong></p>
+<a href="{% url 'checkout' %}" class="btn btn-success">Оформить заявку</a>
+{% else %}<p class="alert alert-info">Заявка пуста.</p>{% endif %}
 {% endblock %}
