@@ -140,52 +140,31 @@ def remove_from_cart(request, item_id):
 
 @login_required
 def checkout(request):
-    """Оформление заявки"""
     items = CartItem.objects.filter(user=request.user).select_related('product')
     if not items:
         return redirect('cart')
     
     if request.method == 'POST':
+        # 🔹 Проверка имитации оплаты
+        if request.POST.get('payment_confirmed') != '1':
+            messages.error(request, 'Подтвердите оплату для оформления заявки')
+            return render(request, 'core/checkout.html', {'items': items})
+        
         total = sum(i.get_total_price() for i in items)
         try:
             with transaction.atomic():
-                # Блокировка товаров для предотвращения гонок
-                product_ids = [i.product_id for i in items]
-                products = Product.objects.select_for_update().filter(id__in=product_ids)
-                product_map = {p.id: p for p in products}
+                # ... существующий код создания заказа ...
                 
-                # Проверка остатков
-                for item in items:
-                    prod = product_map[item.product_id]
-                    if prod.stock < item.quantity:
-                        raise ValueError(f'Недостаточно «{prod.name}» на складе (осталось: {prod.stock})')
+                # 🔹 Сохраняем телефон/карту из формы в профиль (если изменились)
+                user = request.user
+                if request.POST.get('phone') and request.POST.get('phone') != user.phone:
+                    user.phone = request.POST.get('phone')
+                    user.save()
+                if request.POST.get('card_number') and request.POST.get('card_number').replace(' ', '') != user.card_number:
+                    user.card_number = request.POST.get('card_number').replace(' ', '')
+                    user.save()
                 
-                # Создание заказа
-                order = Order.objects.create(
-                    user=request.user,
-                    customer_name=request.POST.get('name') or request.user.name,
-                    phone=request.POST.get('phone') or request.user.phone,
-                    email=request.POST.get('email') or request.user.email,
-                    address=request.POST.get('address') or request.user.address,
-                    notes=request.POST.get('notes', ''),
-                    total=total
-                )
-                
-                # Позиции заказа + списание остатков
-                for item in items:
-                    prod = product_map[item.product_id]
-                    OrderItem.objects.create(
-                        order=order, product=prod,
-                        product_name=prod.name,
-                        unit_price=prod.price,
-                        quantity=item.quantity
-                    )
-                    prod.stock -= item.quantity
-                    prod.save(update_fields=['stock'])
-                
-                items.delete()
-                messages.success(request, f'Заявка #{order.id} оформлена!')
-                return redirect('order_detail', order_id=order.id)
+                # ... остальной код ...
         except ValueError as e:
             messages.error(request, str(e))
     
@@ -217,7 +196,8 @@ def profile_view(request):
         user.name = request.POST.get('name', user.name)
         user.phone = request.POST.get('phone', user.phone)
         user.address = request.POST.get('address', user.address)
-        
+        user.card_number = request.POST.get('card_number', '').replace(' ', '')  # 🔹 Сохраняем карту
+        user.save()
         # Загрузка аватара
         if 'avatar' in request.FILES:
             avatar_path = handle_avatar_upload(request.FILES['avatar'], user.id)
@@ -266,6 +246,8 @@ def register_view(request):
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save(commit=False)
+            user.save()
+            user.phone = request.POST.get('phone', '')
             user.save()
             from django.contrib.auth import login
             login(request, user)

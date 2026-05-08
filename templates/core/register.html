@@ -81,4 +81,16 @@
         </div>
     </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Маска телефона: +7 (999) 999-99-99
+    const phoneEl = document.getElementById('id_phone');
+    if (phoneEl) {
+        IMask(phoneEl, {
+            mask: '+{7} (000) 000-00-00',
+            lazy: false
+        });
+    }
+});
+</script>
 {% endblock %}

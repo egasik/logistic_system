@@ -8,7 +8,7 @@ django.setup()
 from core.models import User
 
 # 👇 МЕНЯЙ EMAIL ЗДЕСЬ ПЕРЕД ЗАПУСКОМ
-TARGET_EMAIL = "egasik112@gmail.com"
+TARGET_EMAIL = "1234@1234.com"
 
 try:
     user = User.objects.get(email=TARGET_EMAIL)

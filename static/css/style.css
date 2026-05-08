@@ -812,3 +812,23 @@ main.container {
 .profile-page .row {
     align-items: flex-start !important;
 }
+/* Анимация успешной оплаты */
+@keyframes pulse-success {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.9; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+#paymentSuccess {
+    animation: pulse-success 0.6s ease-out;
+}
+
+/* Прогресс-бар оплаты */
+.progress-bar-animated {
+    animation: progress-bar-stripes 1s linear infinite;
+}
+
+@keyframes progress-bar-stripes {
+    from { background-position: 1rem 0; }
+    to { background-position: 0 0; }
+}

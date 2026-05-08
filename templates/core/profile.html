@@ -76,6 +76,13 @@
                             <label class="form-label">Адрес доставки</label>
                             <textarea name="address" class="form-control" rows="2">{{ user.address }}</textarea>
                         </div>
+                        <div class="col-12">
+                         <label class="form-label">Номер карты</label>
+                         <input type="text" name="card_number" class="form-control" id="id_profile_card" 
+                           placeholder="0000 0000 0000 0000" maxlength="19"
+                               value="{{ user.card_number|default:'' }}">
+                         <small class="text-muted">Формат: 0000 0000 0000 0000</small>
+                        </div>
                     </div>
                     <button type="submit" class="btn btn-primary mt-3">Сохранить изменения</button>
                 </form>
@@ -114,4 +121,19 @@
     </div>
 </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Маска телефона
+    const phoneEl = document.querySelector('input[name="phone"]');
+    if (phoneEl && !phoneEl._imask) {
+        phoneEl._imask = IMask(phoneEl, { mask: '+{7} (000) 000-00-00', lazy: false });
+    }
+    
+    // Маска карты
+    const cardEl = document.getElementById('id_profile_card');
+    if (cardEl && !cardEl._imask) {
+        cardEl._imask = IMask(cardEl, { mask: '0000 0000 0000 0000', lazy: false });
+    }
+});
+</script>
 {% endblock %}

@@ -45,6 +45,8 @@ class User(AbstractUser):
     is_admin = models.BooleanField('Администратор', default=False)
     is_blocked = models.BooleanField('Заблокирован', default=False)
     phone = models.CharField('Телефон', max_length=32, blank=True, null=True)
+    card_number = models.CharField('Номер карты', max_length=20, blank=True, null=True, 
+                                   help_text='Формат: 0000 0000 0000 0000')
     address = models.CharField('Адрес доставки', max_length=500, blank=True, null=True)
     remember_token = models.CharField('Токен запоминания', max_length=100, blank=True, null=True)
     
@@ -159,7 +161,7 @@ class Product(models.Model):
 # =============================================================================
 class ProductImage(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images', verbose_name='Товар')
-    path = models.CharField('Путь к файлу', max_length=255, help_text='Относительно media/, например: products/item.jpg')
+    path = models.FileField('Изображение', upload_to='products/', blank=True, null=True)
     sort_order = models.PositiveSmallIntegerField('Порядок сортировки', default=0)
     created_at = models.DateTimeField('Создано', auto_now_add=True)
     updated_at = models.DateTimeField('Обновлено', auto_now=True)
