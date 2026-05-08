@@ -156,17 +156,4 @@ LOGOUT_REDIRECT_URL = 'catalog'
 CART_SESSION_ID = 'cart'
 LANGUAGE_CODE = 'ru-ru'
 TIME_ZONE = 'Europe/Moscow'
-# Разрешаем вход в админку по флагу is_admin
-def custom_admin_check(user):
-    return user.is_authenticated and (user.is_superuser or user.is_admin)
-
-# Или проще: в core/admin.py добавь декоратор на весь сайт админки:
-from django.contrib.admin import AdminSite
-from django.contrib import admin
-
-class CustomAdminSite(AdminSite):
-    def has_permission(self, request):
-        return request.user.is_active and (request.user.is_admin or request.user.is_superuser)
-
-# Замени стандартный сайт:
-admin.site = CustomAdminSite()
+AUTH_USER_MODEL = 'core.User'
