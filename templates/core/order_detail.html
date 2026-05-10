@@ -103,7 +103,7 @@
 
         <!-- Кнопки действий -->
         <div class="d-flex gap-2 justify-content-center">
-            <a href="{% url 'my_orders' %}" class="btn btn-outline-primary">
+            <a href="{% url 'orders_list' %}" class="btn btn-outline-primary">
                 ← Все заявки
             </a>
             {% if order.status == 'new' %}

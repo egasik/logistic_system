@@ -1,23 +1,85 @@
 {% extends 'core/base.html' %}
+{% load static %}
+{% block title %}{{ product.name }} — LogisticsShop{% endblock %}
+
 {% block content %}
-<div class="row">
-    <div class="col-md-6">
-        {% if images %}<img src="/media/{{ images.first.path }}" class="img-fluid rounded shadow" alt="{{ product.name }}">{% endif %}
-    </div>
-    <div class="col-md-6">
-        <h2>{{ product.name }}</h2>
-        <p class="text-muted">{{ product.category.name }} | {{ product.carrier.name|default:"Без перевозчика" }}</p>
-        <p class="fs-4 fw-bold text-primary">{{ product.price }} ₽</p>
-        <p>{{ product.description }}</p>
-        <p><strong>На складе:</strong> {{ product.stock }} ед.</p>
-        {% if product.stock > 0 %}
-            <form method="post" action="{% url 'add_to_cart' product.id %}">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-primary">Добавить в заявку</button>
-            </form>
-        {% else %}
-            <span class="badge bg-secondary fs-6">Нет в наличии</span>
-        {% endif %}
+<div class="product-detail-page">
+    <div class="row g-5">
+        <!-- Фото товара -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0">
+                {% if images %}
+                <img src="/media/{{ images.first.path }}" class="card-img-top" alt="{{ product.name }}">
+                {% else %}
+                <img src="{% static 'img/no-image.png' %}" class="card-img-top" alt="{{ product.name }}" style="height: 400px; object-fit: cover;">
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Детали товара -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4 p-md-5">
+                    {% if product.category %}
+                    <span class="badge bg-secondary mb-3">{{ product.category.name }}</span>
+                    {% endif %}
+                    
+                    <h1 class="card-title fw-bold mb-3">{{ product.name }}</h1>
+                    
+                    <p class="text-muted mb-4">
+                        {% if product.carrier %}Перевозчик: {{ product.carrier.name }}{% else %}Без перевозчика{% endif %}
+                    </p>
+                    
+                    <div class="d-flex align-items-center mb-4">
+                        <span class="price-lg fw-bold text-primary-custom me-3">{{ product.price }} ₽</span>
+                        {% if product.stock > 0 %}
+                        <span class="stock-badge">В наличии: {{ product.stock }} ед.</span>
+                        {% else %}
+                        <span class="badge bg-danger fs-6">Нет в наличии</span>
+                        {% endif %}
+                    </div>
+                    
+                    {% if product.description %}
+                    <p class="card-text mb-4 fs-5">{{ product.description }}</p>
+                    {% endif %}
+                    
+                    {% if product.stock > 0 %}
+                    <form method="post" action="{% url 'add_to_cart' product.id %}">
+                        {% csrf_token %}
+                        <div class="d-flex gap-3">
+                            <button type="submit" class="btn btn-primary btn-lg flex-grow-1">
+                                🛒 Добавить в заявку
+                            </button>
+                        </div>
+                    </form>
+                    {% else %}
+                    <div class="alert alert-warning mt-4">
+                        <i class="bi bi-exclamation-triangle"></i> Товар временно отсутствует на складе
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mt-5 pt-4 border-top">
+                        <h6 class="fw-bold mb-3">Характеристики</h6>
+                        <div class="row small">
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Артикул:</strong></p>
+                                <p>{{ product.sku|default:"—" }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Категория:</strong></p>
+                                <p>{{ product.category.name|default:"—" }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <a href="{% url 'catalog' %}" class="btn btn-outline-primary">
+                    ← Назад в каталог
+                </a>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

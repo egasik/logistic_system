@@ -1,22 +1,29 @@
 {% extends 'core/base.html' %}
+
+{% block title %}Главная — LogisticsPro{% endblock %}
+
 {% block content %}
-<div class="p-5 mb-4 bg-white rounded-3 text-center shadow-sm">
-    <h1 class="display-5 fw-bold text-primary">Система управления логистикой</h1>
-    <p class="lead">Учёт грузов, оформление заявок и контроль остатков в едином интерфейсе.</p>
-    <a href="{% url 'catalog' %}" class="btn btn-primary btn-lg px-4">Перейти в каталог</a>
+<div class="p-5 mb-4 bg-light rounded-3 text-center">
+    <h1 class="display-5 fw-bold">🚚 LogisticsPro</h1>
+    <p class="col-md-8 fs-5 mx-auto">Система управления логистикой и складским учётом</p>
+    <a href="{% url 'catalog' %}" class="btn btn-primary btn-lg">Перейти в каталог</a>
 </div>
-<div class="row g-4">
-    {% for p in products %}
-    <div class="col-md-3">
+
+{% if products %}
+<h2 class="mb-4">Популярные услуги</h2>
+<div class="row row-cols-1 row-cols-md-4 g-4">
+    {% for product in products %}
+    <div class="col">
         <div class="card h-100">
             <div class="card-body">
-                <h5 class="card-title">{{ p.name }}</h5>
-                <p class="text-muted small">{{ p.category.name }}</p>
-                <p class="fw-bold">{{ p.price }} ₽</p>
-                <a href="{% url 'product_detail' p.slug %}" class="btn btn-sm btn-outline-primary">Подробнее</a>
+                <h5 class="card-title">{{ product.name }}</h5>
+                <p class="card-text text-muted">{{ product.category.name }}</p>
+                <p class="card-text fw-bold">{{ product.price }} ₽</p>
+                <a href="{% url 'product_detail' product.slug %}" class="btn btn-outline-primary btn-sm">Подробнее</a>
             </div>
         </div>
     </div>
     {% endfor %}
 </div>
+{% endif %}
 {% endblock %}

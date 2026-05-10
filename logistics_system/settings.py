@@ -72,38 +72,30 @@ WSGI_APPLICATION = 'logistics_system.wsgi.application'
 
 
 # Database
-# Default: MySQL (for MySQL Workbench workflow).
-# Fallback to SQLite is enabled for local startup when MySQL driver is unavailable.
-DB_ENGINE = os.getenv("DB_ENGINE", "mysql").lower()
-MYSQL_DRIVER_AVAILABLE = True
-if DB_ENGINE == "mysql":
-    try:
-        import MySQLdb  # type: ignore # noqa: F401
-    except ImportError:
-        MYSQL_DRIVER_AVAILABLE = False
+# Default: SQLite (local development).
+# MySQL configuration commented for future use.
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
+    }
+}
 
-if DB_ENGINE == "sqlite" or (DB_ENGINE == "mysql" and not MYSQL_DRIVER_AVAILABLE):
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
-        }
-    }
-else:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.mysql",
-            "NAME": os.getenv("MYSQL_DB", "23009_logistics_db_new"),
-            "USER": os.getenv("MYSQL_USER", "23009"),
-            "PASSWORD": os.getenv("MYSQL_PASSWORD", "bfnqxt"),
-            "HOST": os.getenv("MYSQL_HOST", "web.edu"),
-            "PORT": os.getenv("MYSQL_PORT", "3306"),
-            "OPTIONS": {
-                "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
-                "charset": "utf8mb4",
-            },
-        }
-    }
+# MySQL configuration (commented for future use)
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.mysql",
+#         "NAME": os.getenv("MYSQL_DB", "logistics_db_new"),
+#         "USER": os.getenv("MYSQL_USER", "root"),
+#         "PASSWORD": os.getenv("MYSQL_PASSWORD", ""),
+#         "HOST": os.getenv("MYSQL_HOST", "localhost"),
+#         "PORT": os.getenv("MYSQL_PORT", "3306"),
+#         "OPTIONS": {
+#             "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
+#             "charset": "utf8mb4",
+#         },
+#     }
+# }
 
 
 # Password validation
@@ -128,9 +120,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ru-ru'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Moscow'
 
 USE_I18N = True
 
@@ -143,7 +135,6 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-AUTH_USER_MODEL = 'core.User'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
@@ -154,6 +145,3 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_REDIRECT_URL = 'catalog'
 LOGOUT_REDIRECT_URL = 'catalog'
 CART_SESSION_ID = 'cart'
-LANGUAGE_CODE = 'ru-ru'
-TIME_ZONE = 'Europe/Moscow'
-AUTH_USER_MODEL = 'core.User'

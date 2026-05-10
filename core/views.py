@@ -1,333 +1,249 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login, logout, authenticate
-from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db import transaction
-from django.core.files.storage import default_storage
-from django.conf import settings
-from django.db.models import Q, Sum, Count
-from .models import (
-    Product, Category, Carrier, CartItem, Order, OrderItem, User, Profile
-)
-from .forms import CustomUserCreationForm  
-from django.contrib.auth.forms import AuthenticationForm
+from django.db import connection, transaction
+from django.db.models import Q, Count, Min, Max
+from django.core.paginator import Paginator
 
+from .models import Product, Category, CartItem, Order, OrderItem, User, Brand, Profile
+from .forms import UserUpdateForm, ProfileUpdateForm
 
-# ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
-def is_admin(user):
-    return user.is_authenticated and user.is_admin
-
-
-def handle_avatar_upload(avatar_file, user_id):
-    """Сохраняет аватар и возвращает путь относительно media/"""
-    if not avatar_file or not hasattr(avatar_file, 'name'):
-        return None
-    ext = os.path.splitext(avatar_file.name)[1].lower()
-    if ext not in ['.jpg', '.jpeg', '.png', '.gif', '.webp']:
-        return None
-    filename = f"avatars/user_{user_id}_{uuid.uuid4().hex[:8]}{ext}"
-    path = os.path.join(settings.MEDIA_ROOT, filename)
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, 'wb+') as destination:
-        for chunk in avatar_file.chunks():
-            destination.write(chunk)
-    return filename
-
-
-# ==================== ПУБЛИЧНЫЕ СТРАНИЦЫ ====================
+# =============================================================================
+# 🏠 ГЛАВНАЯ И КАТАЛОГ
+# =============================================================================
 def index(request):
     """Главная страница"""
-    products = Product.objects.filter(is_active=True, stock__gt=0)[:8]
-    categories = Category.objects.annotate(product_count=Count('products')).filter(product_count__gt=0)
-    return render(request, 'core/index.html', {'products': products, 'categories': categories})
-
+    products = Product.objects.filter(is_active=True)[:8]
+    return render(request, 'core/index.html', {'products': products})
 
 def catalog(request):
-    """Каталог с фильтрацией и поиском"""
-    categories = Category.objects.all()
-    carriers = Carrier.objects.all()
-    products = Product.objects.filter(is_active=True).select_related('category', 'carrier')
+    """Каталог товаров с фильтрами"""
+    categories = Category.objects.annotate(
+        product_count=Count('products', filter=Q(products__is_active=True))
+    )
     
-    # Поиск
-    if search := request.GET.get('q'):
-        products = products.filter(Q(name__icontains=search) | Q(description__icontains=search) | Q(sku__icontains=search))
+    products = Product.objects.filter(is_active=True).select_related('category', 'brand').order_by('-id')
     
-    # Фильтры
-    if cat_slug := request.GET.get('category'):
-        products = products.filter(category__slug=cat_slug)
-    if carrier_slug := request.GET.get('carrier'):
-        products = products.filter(carrier__slug=carrier_slug)
-    if min_price := request.GET.get('min_price'):
-        products = products.filter(price__gte=min_price)
-    if max_price := request.GET.get('max_price'):
-        products = products.filter(price__lte=max_price)
-    if request.GET.get('in_stock') == 'on':
+    # Фильтр по категории
+    category_slug = request.GET.get('category')
+    if category_slug:
+        products = products.filter(category__slug=category_slug)
+    
+    # Фильтр по наличию
+    in_stock = request.GET.get('in_stock')
+    if in_stock == '1':
         products = products.filter(stock__gt=0)
     
-    # Сортировка
-    sort = request.GET.get('sort', '-created_at')
-    if sort in ['price', '-price', 'name', '-name', 'stock', '-stock']:
-        products = products.order_by(sort)
+    # Фильтр по цене
+    min_price = request.GET.get('min_price')
+    max_price = request.GET.get('max_price')
+    if min_price:
+        products = products.filter(price__gte=min_price)
+    if max_price:
+        products = products.filter(price__lte=max_price)
+    
+    # Поиск
+    search = request.GET.get('search')
+    if search:
+        products = products.filter(Q(name__icontains=search) | Q(description__icontains=search))
+    
+    # Пагинация
+    paginator = Paginator(products, 12)
+    page = request.GET.get('page')
+    products_page = paginator.get_page(page)
+    
+    # Сохраняем параметры для пагинации
+    query_params = request.GET.copy()
+    if 'page' in query_params:
+        del query_params['page']
     
     return render(request, 'core/catalog.html', {
-        'products': products, 'categories': categories, 'carriers': carriers,
-        'current_category': request.GET.get('category'),
-        'current_carrier': request.GET.get('carrier'),
-        'query': request.GET.get('q', ''),
-        'sort': sort
+        'products': products_page,
+        'categories': categories,
+        'current_category': category_slug,
+        'current_in_stock': in_stock,
+        'current_min_price': min_price,
+        'current_max_price': max_price,
+        'current_search': search,
+        'query_params': query_params.urlencode(),
     })
 
+def product_detail(request, product_slug):
+    """Страница товара"""
+    product = get_object_or_404(Product, slug=product_slug, is_active=True)
+    image_path = None
+    # Keep compatibility with legacy DB where image is a column on core_product.
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT image FROM core_product WHERE id = %s", [product.id])
+        row = cursor.fetchone()
+    if row and row[0]:
+        image_path = row[0]
+    return render(request, 'core/product_detail.html', {'product': product, 'image_path': image_path})
 
-def product_detail(request, slug):
-    """Карточка товара"""
-    product = get_object_or_404(Product, slug=slug, is_active=True)
-    images = product.images.all()
-    related = Product.objects.filter(category=product.category, is_active=True).exclude(id=product.id)[:4]
-    return render(request, 'core/product_detail.html', {
-        'product': product, 'images': images, 'related_products': related
-    })
-
-
-# ==================== КОРЗИНА И ЗАКАЗЫ ====================
+# =============================================================================
+# 🛒 КОРЗИНА
+# =============================================================================
 @login_required
 def cart_view(request):
-    """Корзина / черновик заявки"""
-    items = CartItem.objects.filter(user=request.user).select_related('product')
-    total = sum(i.get_total_price() for i in items)
-    return render(request, 'core/cart.html', {'items': items, 'total': total})
-
+    """Просмотр корзины"""
+    cart_items = CartItem.objects.filter(user=request.user).select_related('product')
+    total = sum(item.product.price * item.quantity for item in cart_items)
+    return render(request, 'core/cart.html', {'cart_items': cart_items, 'total': total})
 
 @login_required
 def add_to_cart(request, product_id):
     """Добавить товар в корзину"""
     product = get_object_or_404(Product, id=product_id, is_active=True)
-    if product.stock < 1:
-        messages.error(request, f'«{product.name}» нет в наличии')
-        return redirect('product_detail', slug=product.slug)
-    item, created = CartItem.objects.get_or_create(user=request.user, product=product)
-    if not created and item.quantity + 1 > product.stock:
-        messages.error(request, f'Доступно только {product.stock} ед. «{product.name}»')
-        return redirect('cart')
-    item.quantity = item.quantity + 1 if not created else 1
-    item.save()
+    cart_item, created = CartItem.objects.get_or_create(user=request.user, product=product)
+    if not created:
+        cart_item.quantity += 1
+        cart_item.save()
     messages.success(request, f'«{product.name}» добавлен в заявку')
     return redirect('cart')
 
-
 @login_required
-def update_cart(request, item_id):
-    """Обновить количество в корзине"""
-    if request.method == 'POST':
-        quantity = int(request.POST.get('quantity', 1))
-        item = get_object_or_404(CartItem, id=item_id, user=request.user)
-        if quantity <= 0:
-            item.delete()
-        elif quantity <= item.product.stock:
-            item.quantity = quantity
-            item.save()
-        else:
-            messages.error(request, f'Доступно только {item.product.stock} ед.')
-    return redirect('cart')
-
-
-@login_required
-def remove_from_cart(request, item_id):
+def remove_from_cart(request, cart_item_id):
     """Удалить товар из корзины"""
-    CartItem.objects.filter(id=item_id, user=request.user).delete()
-    messages.success(request, 'Товар удалён из заявки')
+    cart_item = get_object_or_404(CartItem, id=cart_item_id, user=request.user)
+    cart_item.delete()
     return redirect('cart')
 
-
+# =============================================================================
+# 📦 ОФОРМЛЕНИЕ ЗАЯВКИ
+# =============================================================================
 @login_required
 def checkout(request):
-    items = CartItem.objects.filter(user=request.user).select_related('product')
-    if not items:
+    """Оформление заявки"""
+    cart_items = CartItem.objects.filter(user=request.user).select_related('product')
+    if not cart_items:
+        messages.warning(request, 'Заявка пуста')
         return redirect('cart')
     
     if request.method == 'POST':
-        # 🔹 Проверка имитации оплаты
-        if request.POST.get('payment_confirmed') != '1':
-            messages.error(request, 'Подтвердите оплату для оформления заявки')
-            return render(request, 'core/checkout.html', {'items': items})
-        
-        total = sum(i.get_total_price() for i in items)
+        total = sum(item.product.price * item.quantity for item in cart_items)
         try:
             with transaction.atomic():
-                # ... существующий код создания заказа ...
-                
-                # 🔹 Сохраняем телефон/карту из формы в профиль (если изменились)
-                user = request.user
-                if request.POST.get('phone') and request.POST.get('phone') != user.phone:
-                    user.phone = request.POST.get('phone')
-                    user.save()
-                if request.POST.get('card_number') and request.POST.get('card_number').replace(' ', '') != user.card_number:
-                    user.card_number = request.POST.get('card_number').replace(' ', '')
-                    user.save()
-                
-                # ... остальной код ...
+                # Создаём заказ
+                order = Order.objects.create(
+                    user=request.user,
+                    customer_name=f"{request.user.first_name} {request.user.last_name}".strip() or request.user.email,
+                    phone=request.user.phone or '',
+                    email=request.user.email,
+                    address=request.user.address or '',
+                    total=total,
+                    notes=request.POST.get('notes', '')
+                )
+                # Создаём позиции заказа и списываем остатки
+                for item in cart_items:
+                    OrderItem.objects.create(
+                        order=order,
+                        product=item.product,
+                        product_name=item.product.name,
+                        unit_price=item.product.price,
+                        quantity=item.quantity
+                    )
+                    # Списываем со склада
+                    if item.product.stock >= item.quantity:
+                        item.product.stock -= item.quantity
+                        item.product.save()
+                    else:
+                        raise ValueError(f'Недостаточно товара «{item.product.name}» на складе')
+                # Очищаем корзину
+                cart_items.delete()
+            messages.success(request, f'✅ Заявка #{order.id} успешно оформлена!')
+            return redirect('order_success', order_id=order.id)
         except ValueError as e:
             messages.error(request, str(e))
+        except Exception as e:
+            messages.error(request, f'Ошибка: {e}')
     
-    return render(request, 'core/checkout.html', {'items': items})
+    total = sum(item.product.price * item.quantity for item in cart_items)
+    return render(request, 'core/checkout.html', {'cart_items': cart_items, 'total': total})
 
+@login_required
+def order_success(request, order_id):
+    """Страница успеха после оформления"""
+    order = get_object_or_404(Order, id=order_id, user=request.user)
+    return render(request, 'core/order_success.html', {'order': order})
+
+# =============================================================================
+# 👤 ЛИЧНЫЙ КАБИНЕТ
+# =============================================================================
+@login_required
+def profile_view(request):
+    """Профиль пользователя"""
+    if request.method == 'POST':
+        u_form = UserUpdateForm(request.POST, instance=request.user)
+        p_form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user.profile)
+        if u_form.is_valid() and p_form.is_valid():
+            u_form.save()
+            p_form.save()
+            messages.success(request, '✅ Профиль обновлён!')
+            return redirect('profile')
+    else:
+        u_form = UserUpdateForm(instance=request.user)
+        p_form = ProfileUpdateForm(instance=request.user.profile)
+    
+    # Последние 5 заказов для отображения в профиле
+    recent_orders = Order.objects.filter(user=request.user).order_by('-created_at')[:5]
+    
+    return render(request, 'core/profile.html', {
+        'u_form': u_form, 
+        'p_form': p_form,
+        'recent_orders': recent_orders
+    })
+
+@login_required
+def orders_list(request):
+    """История заявок клиента"""
+    orders = Order.objects.filter(user=request.user).order_by('-created_at')
+    return render(request, 'core/orders_list.html', {'orders': orders})
 
 @login_required
 def order_detail(request, order_id):
-    """Детали заказа (для клиента)"""
+    """Детальная страница заказа"""
     order = get_object_or_404(Order, id=order_id, user=request.user)
-    items = order.items.select_related('product')
-    return render(request, 'core/order_detail.html', {'order': order, 'items': items})
+    return render(request, 'core/order_detail.html', {'order': order})
 
-
-@login_required
-def my_orders(request):
-    """История заказов пользователя"""
-    orders = Order.objects.filter(user=request.user).order_by('-created_at')
-    return render(request, 'core/orders.html', {'orders': orders})
-
-
-# ==================== ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ ====================
-@login_required
-def profile_view(request):
-    """Страница профиля с загрузкой аватара"""
+# =============================================================================
+# 🔐 АВТОРИЗАЦИЯ
+# =============================================================================
+def register_view(request):
+    """Регистрация"""
     if request.method == 'POST':
-        user = request.user
-        # Обновление данных пользователя
-        user.name = request.POST.get('name', user.name)
-        user.phone = request.POST.get('phone', user.phone)
-        user.address = request.POST.get('address', user.address)
-        user.card_number = request.POST.get('card_number', '').replace(' ', '')  # 🔹 Сохраняем карту
-        user.save()
-        # Загрузка аватара
-        if 'avatar' in request.FILES:
-            avatar_path = handle_avatar_upload(request.FILES['avatar'], user.id)
-            if avatar_path:
-                user.profile.avatar = avatar_path
-        
-        user.save()
-        user.profile.save(update_fields=['avatar'])
-        messages.success(request, 'Профиль обновлён')
-        return redirect('profile')
-    
-    recent_orders = Order.objects.filter(user=request.user).order_by('-created_at')[:3]
-    return render(request, 'core/profile.html', {'recent_orders': recent_orders})
+        from .forms import UserRegisterForm
+        form = UserRegisterForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            from django.contrib.auth import login
+            login(request, user)
+            messages.success(request, '✅ Регистрация успешна!')
+            return redirect('catalog')
+    else:
+        from .forms import UserRegisterForm
+        form = UserRegisterForm()
+    return render(request, 'core/register.html', {'form': form})
 
-
-# ==================== АУТЕНТИФИКАЦИЯ ====================
 def login_view(request):
-    """Вход в систему"""
+    """Вход"""
     if request.method == 'POST':
+        from django.contrib.auth import authenticate, login
+        from django.contrib.auth.forms import AuthenticationForm
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
-            user = form.get_user()
-            if user.is_blocked:
-                messages.error(request, 'Ваш аккаунт заблокирован')
-                return redirect('login')
-            login(request, user)
-            messages.success(request, f'Добро пожаловать, {user.name or user.email}!')
-            next_url = request.GET.get('next', 'index')
-            return redirect(next_url)
+            user = authenticate(username=form.cleaned_data['username'], password=form.cleaned_data['password'])
+            if user:
+                login(request, user)
+                return redirect('catalog')
     else:
+        from django.contrib.auth.forms import AuthenticationForm
         form = AuthenticationForm()
     return render(request, 'core/login.html', {'form': form})
 
-
 @login_required
 def logout_view(request):
-    """Выход из системы"""
+    """Выход"""
+    from django.contrib.auth import logout
     logout(request)
-    messages.info(request, 'Вы вышли из системы')
-    return redirect('index')
-
-
-def register_view(request):
-    """Страница регистрации"""
-    if request.method == 'POST':
-        form = CustomUserCreationForm(request.POST)
-        if form.is_valid():
-            user = form.save(commit=False)
-            user.save()
-            user.phone = request.POST.get('phone', '')
-            user.save()
-            from django.contrib.auth import login
-            login(request, user)
-            messages.success(request, 'Регистрация успешна! Добро пожаловать.')
-            return redirect('index')
-    else:
-        form = CustomUserCreationForm()
-    return render(request, 'core/register.html', {'form': form})
-
-
-# ==================== АДМИН-ФУНКЦИИ (отчёты и управление) ====================
-@user_passes_test(is_admin)
-def admin_dashboard(request):
-    """Панель администратора: статистика"""
-    stats = {
-        'total_orders': Order.objects.count(),
-        'new_orders': Order.objects.filter(status='new').count(),
-        'total_products': Product.objects.filter(is_active=True).count(),
-        'low_stock': Product.objects.filter(is_active=True, stock__lt=10).count(),
-        'total_users': User.objects.filter(is_blocked=False).count(),
-        'revenue': Order.objects.filter(status='delivered').aggregate(total=Sum('total'))['total'] or 0,
-    }
-    recent_orders = Order.objects.select_related('user').order_by('-created_at')[:10]
-    low_stock_products = Product.objects.filter(is_active=True, stock__lt=10).select_related('category')[:10]
-    return render(request, 'core/admin_dashboard.html', {
-        'stats': stats, 'recent_orders': recent_orders, 'low_stock_products': low_stock_products
-    })
-
-
-@user_passes_test(is_admin)
-def admin_orders(request):
-    """Управление заказами (смена статусов)"""
-    status_filter = request.GET.get('status')
-    orders = Order.objects.select_related('user').all()
-    if status_filter and status_filter != 'all':
-        orders = orders.filter(status=status_filter)
-    orders = orders.order_by('-created_at')
-    return render(request, 'core/admin_orders.html', {'orders': orders, 'current_status': status_filter})
-
-
-@user_passes_test(is_admin)
-def admin_order_update(request, order_id):
-    """Обновление статуса заказа (AJAX)"""
-    if request.method == 'POST':
-        order = get_object_or_404(Order, id=order_id)
-        new_status = request.POST.get('status')
-        if new_status in dict(Order.STATUS_CHOICES):
-            order.status = new_status
-            order.save(update_fields=['status', 'updated_at'])
-            messages.success(request, f'Статус заявки #{order.id} изменён на «{order.get_status_display()}»')
-    return redirect('admin_orders')
-
-
-@user_passes_test(is_admin)
-def admin_products(request):
-    """Управление товарами (список)"""
-    products = Product.objects.select_related('category', 'carrier').all()
-    return render(request, 'core/admin_products.html', {'products': products})
-
-
-@user_passes_test(is_admin)
-def admin_reports(request):
-    """Отчёты: продажи, остатки, оборачиваемость"""
-    # Продажи по статусам
-    orders_by_status = Order.objects.values('status').annotate(
-        count=Count('id'), total=Sum('total')
-    ).order_by('status')
-    
-    # Топ товаров по продажам
-    top_products = OrderItem.objects.values('product_name').annotate(
-        sold=Sum('quantity'), revenue=Sum('unit_price')
-    ).order_by('-sold')[:10]
-    
-    # Остатки по категориям
-    stock_by_category = Product.objects.values('category__name').annotate(
-        total_stock=Sum('stock')
-    ).order_by('-total_stock')
-    
-    return render(request, 'core/admin_reports.html', {
-        'orders_by_status': orders_by_status,
-        'top_products': top_products,
-        'stock_by_category': stock_by_category
-    })
+    messages.info(request, '👋 Вы вышли из системы')
+    return redirect('home')

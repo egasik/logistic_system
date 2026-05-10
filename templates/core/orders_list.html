@@ -1,29 +1,51 @@
 {% extends 'core/base.html' %}
+{% load static %}
 
-{% block title %}Мои заказы{% endblock %}
+{% block title %}Мои заказы — LogisticsPro{% endblock %}
 
 {% block content %}
-<h2 class="mb-3">Мои заказы</h2>
-
-{% if orders %}
-<div class="list-group">
-    {% for order in orders %}
-    <div class="list-group-item mb-2">
-        <div class="d-flex justify-content-between">
-            <div>
-                <div class="fw-bold">Заказ #{{ order.id }}</div>
-                <div class="text-muted small">{{ order.created_at|date:"d.m.Y H:i" }}</div>
-                <div class="small">{{ order.customer_name }} | {{ order.phone }}</div>
-            </div>
-            <div class="text-end">
-                <span class="badge bg-secondary">{{ order.get_status_display }}</span>
-                <div class="fw-bold mt-2">{{ order.total }} ₽</div>
+<div class="container py-5">
+    <h2 class="mb-4 fw-bold">Мои заказы</h2>
+    
+    {% if orders %}
+    <div class="row g-4">
+        {% for order in orders %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm border-0 rounded-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <span class="badge {% if order.status == 'new' %}bg-primary{% elif order.status == 'processing' %}bg-warning{% elif order.status == 'shipped' %}bg-info{% elif order.status == 'delivered' %}bg-success{% else %}bg-danger{% endif %}">
+                            {% if order.status == 'new' %}Новый{% elif order.status == 'processing' %}В обработке{% elif order.status == 'shipped' %}Отправлен{% elif order.status == 'delivered' %}Доставлен{% else %}Отменён{% endif %}
+                        </span>
+                        <small class="text-muted">{{ order.created_at|date:"d.m.Y H:i" }}</small>
+                    </div>
+                    
+                    <h5 class="card-title fw-bold">Заказ #{{ order.id }}</h5>
+                    <p class="card-text mb-2">
+                        <strong>Итого:</strong> <span class="text-success">{{ order.total }} ₽</span>
+                    </p>
+                    <p class="card-text mb-3 small">
+                        <i class="bi bi-box-seam me-1"></i>
+                        {{ order.orderitem_set.count }} товар{{ order.orderitem_set.count|pluralize:"а,ы,ов" }}
+                    </p>
+                    
+                    <a href="{% url 'order_detail' order.id %}" class="btn btn-outline-primary w-100 rounded-pill">
+                        Подробнее
+                    </a>
+                </div>
             </div>
         </div>
+        {% endfor %}
     </div>
-    {% endfor %}
+    {% else %}
+    <div class="text-center py-5">
+        <div class="bi bi-clipboard-data display-1 text-muted mb-3"></div>
+        <h4 class="text-muted">У вас пока нет заказов</h4>
+        <p class="text-muted mb-4">Начните с просмотра каталога товаров</p>
+        <a href="{% url 'catalog' %}" class="btn btn-primary px-4 rounded-pill">
+            <i class="bi bi-bag me-2"></i>Перейти в каталог
+        </a>
+    </div>
+    {% endif %}
 </div>
-{% else %}
-<div class="alert alert-info">У вас пока нет заказов.</div>
-{% endif %}
 {% endblock %}

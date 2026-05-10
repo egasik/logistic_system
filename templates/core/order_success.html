@@ -1,11 +1,57 @@
 {% extends 'core/base.html' %}
+{% load static %}
 
-{% block title %}Заказ оформлен{% endblock %}
+{% block title %}Заказ оформлен — LogisticsPro{% endblock %}
 
 {% block content %}
-<div class="alert alert-success">
-    Заказ #{{ order.id }} успешно оформлен.
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-lg border-0 rounded-4">
+                <div class="card-body text-center py-5">
+                    <!-- Иконка успеха -->
+                    <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-4" style="width: 120px; height: 120px;">
+                        <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
+                    </div>
+                    
+                    <h2 class="fw-bold mb-3">Заказ успешно оформлен!</h2>
+                    <p class="text-muted mb-4">
+                        Благодарим за ваш заказ. Мы начинаем обработку заявки <strong class="text-primary">#{{ order.id }}</strong>.
+                    </p>
+                    
+                    <!-- Информация о заказе -->
+                    <div class="row g-3 mb-5">
+                        <div class="col-md-6">
+                            <div class="bg-light p-3 rounded-3">
+                                <small class="text-muted text-uppercase fw-bold">Номер заказа</small>
+                                <p class="mb-0 fw-semibold fs-4">#{{ order.id }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="bg-light p-3 rounded-3">
+                                <small class="text-muted text-uppercase fw-bold">Итого к оплате</small>
+                                <p class="mb-0 fw-semibold fs-4 text-success">{{ order.total }} ₽</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Кнопки действий -->
+                    <div class="d-flex flex-column flex-md-row gap-3 justify-content-center">
+                        <a href="{% url 'orders_list' %}" class="btn btn-primary btn-lg px-5 rounded-pill">
+                            <i class="bi bi-list me-2"></i>Мои заказы
+                        </a>
+                        <a href="{% url 'catalog' %}" class="btn btn-outline-secondary btn-lg px-5 rounded-pill">
+                            <i class="bi bi-bag me-2"></i>Продолжить покупки
+                        </a>
+                    </div>
+                    
+                    <!-- Подсказка -->
+                    <div class="mt-4 text-muted small">
+                       
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
-<a href="{% url 'orders_list' %}" class="btn btn-primary">К моим заказам</a>
-<a href="{% url 'catalog' %}" class="btn btn-outline-secondary">В каталог</a>
 {% endblock %}

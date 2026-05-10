@@ -1,6 +1,7 @@
 import os
 import django
 import shutil
+import re
 from pathlib import Path
 
 # === НАСТРОЙКА DJANGO ===
@@ -9,28 +10,110 @@ django.setup()
 
 from django.utils.text import slugify
 from django.utils import timezone
-from core.models import Category, Brand, Product, ProductImage
+from core.models import Category, Brand, Product
 
 # === НАСТРОЙКИ ИЗОБРАЖЕНИЙ ===
-# Пути к картинкам внутри проекта (относительно корня)
-# Скрипт скопирует их в media/products/{id}.jpg
-PRODUCT_IMAGES = {
-    "Смартфон NOTHING PHONE 3": "demo_images/7704811119_Exgc77V.webp",
-    "Ноутбук ASUS VivoBook 15": "demo_images/7.png",
-    "Наушники Sony WH-1000XM5": "demo_images/3.png",
-    "Диван угловой 'Комфорт'": "demo_images/8.png",
-    "Дрель-шуруповерт Bosch": "demo_images/9.png",
-    "Умная лампа Philips": "demo_images/10.png",
-    "Кроссовки Nike Air Max": "demo_images/11.png",
-    "Куртка зимняя мужская": "demo_images/12.png",
-    "Рюкзак Xiaomi City": "demo_images/13.png",
-    "Велосипед Stark Tanuki": "demo_images/14.png",
-    "Гантели разборные 20кг": "demo_images/15.png",
-    "Коврик для йоги Pro": "demo_images/16.png",
-    "Конструктор LEGO City": "demo_images/17.png",
-    "Коляска 2 в 1": "demo_images/18.png",
-    "Игра Монополия": "demo_images/19.png",
-}
+# Скрипт ищет картинки в demo_images/ по частичному совпадению с названием товара
+# Поддерживает форматы: jpg, jpeg, png, webp, gif
+# Имена файлов могут содержать цифры и любые символы
+
+DEMO_IMAGES_DIR = Path(__file__).resolve().parent / 'demo_images'
+
+
+def find_image_for_product(product_name):
+    """Ищет изображение для товара по частичному совпадению"""
+    if not DEMO_IMAGES_DIR.exists():
+        print(f"   ⚠️ Папка demo_images не найдена")
+        return None
+
+    # Нормализуем название - убираем специальные символы для поиска
+    normalized_name = re.sub(r'[\'"()-]', '', product_name.lower())
+    name_words = set(re.findall(r'\w+', normalized_name))
+
+    # Поддерживаемые расширения
+    extensions = ['jpg', 'jpeg', 'png', 'webp', 'gif']
+
+    best_match = None
+    best_score = -1
+
+    for file in DEMO_IMAGES_DIR.iterdir():
+        if not file.is_file():
+            continue
+
+        # Имя файла без расширения
+        stem = file.stem.lower()
+        ext = file.suffix.lower().lstrip('.')
+
+        if ext not in extensions:
+            continue
+
+        stem_words = set(re.findall(r'\w+', stem))
+
+        score = 0
+
+        # 1. Приоритет: полное совпадение ключевых слов
+        for word in name_words:
+            if len(word) >= 3 and word in stem_words:
+                score += 10  # Вес полного совпадения (повышен)
+
+        # 2. Бонус за слово в начале файла (например, "nothing" в "nothing_phone.jpg")
+        if stem_words & name_words:
+            score += 3
+
+        # 3. Если файл начинается с цифры и в названии тоже есть цифры - бонус
+        if stem[0].isdigit():
+            name_digits = re.findall(r'\d+', normalized_name)
+            if name_digits:
+                file_num = re.findall(r'\d+', stem)
+                if file_num and file_num[0] == name_digits[0]:
+                    score += 8  # Вес совпадения цифр (снижен с 10)
+
+        # 4. Штраф за слишком много слов в файле (избегаем дублирования)
+        if len(stem_words) > len(name_words) * 2:
+            score -= 5  # Файл слишком "мусорный"
+
+        # 5. Дополнительный бонус за содержание ключевых слов из названия
+        matching_words = len(stem_words & name_words)
+        score += matching_words * 2
+
+        if score > best_score:
+            best_score = score
+            best_match = file
+
+    # Если есть минимум 5 очков совпадения - возвращаем
+    if best_score >= 5:
+        return best_match
+
+    # Если не нашли, ищем по номеру в конце имени (для файлов 1.png, 2.jpg и т.д.)
+    # Только если в названии ровно одна цифра и она уникальна
+    all_digits = re.findall(r'\d+', normalized_name)
+    if len(all_digits) == 1:
+        num = all_digits[0]
+        for ext in extensions:
+            file = DEMO_IMAGES_DIR / f"{num}.{ext}"
+            if file.exists():
+                return file
+
+    return None
+
+
+def copy_image_to_media(image_path, product_id):
+    """Копирует изображение в media/products/{product_id}.jpg"""
+    if not image_path:
+        return None
+    
+    base_dir = Path(__file__).resolve().parent
+    dst_dir = base_dir / 'media' / 'products'
+    dst_file = dst_dir / f"{product_id}.jpg"
+    
+    dst_dir.mkdir(parents=True, exist_ok=True)
+    
+    try:
+        shutil.copy2(image_path, dst_file)
+        return f"products/{product_id}.jpg"
+    except Exception as e:
+        print(f"   ❌ Ошибка копирования: {e}")
+        return None
 
 # Данные для заполнения (товары, как в оригинале)
 PRODUCTS = [
@@ -87,31 +170,6 @@ def get_unique_slug(model, base_value):
         candidate = f"{base}-{idx}"
         idx += 1
     return candidate
-
-
-def copy_image_to_media(relative_src_path, product_id):
-    """Копирует изображение в media/products/{id}.jpg"""
-    if not relative_src_path:
-        return None
-    
-    base_dir = Path(__file__).resolve().parent.parent
-    src_file = base_dir / relative_src_path
-    dst_dir = base_dir / 'media' / 'products'
-    dst_file = dst_dir / f"{product_id}.jpg"
-    
-    dst_dir.mkdir(parents=True, exist_ok=True)
-    
-    if not src_file.exists():
-        print(f"   ⚠️ Файл не найден: {src_file}")
-        return None
-    
-    try:
-        shutil.copy2(src_file, dst_file)
-        print(f"   ✅ Картинка: {relative_src_path} → products/{product_id}.jpg")
-        return f"products/{product_id}.jpg"
-    except Exception as e:
-        print(f"   ❌ Ошибка копирования: {e}")
-        return None
 
 
 def fill_data():
@@ -178,18 +236,18 @@ def fill_data():
             print(f"   ✏️ Обновлён: {name}")
         else:
             print(f"   ✅ Создан: {name}")
-        
+
         # === ПРИКРЕПЛЕНИЕ КАРТИНКИ ===
-        image_path = PRODUCT_IMAGES.get(name)
-        if image_path:
-            saved_path = copy_image_to_media(image_path, product.id)
+        image_file = find_image_for_product(name)
+        if image_file:
+            saved_path = copy_image_to_media(image_file, product.id)
             if saved_path:
-                # Создаём запись в ProductImage (многие картинки на товар)
-                ProductImage.objects.get_or_create(
-                    product=product,
-                    defaults={'path': saved_path, 'sort_order': 0}
-                )
-                print(f"   🖼️ Картинка прикреплена к {name}")
+                # Присваиваем изображение напрямую в product.image
+                product.image = saved_path
+                product.save()
+                print(f"   🖼️ Картинка: {image_file.name} → products/{product.id}.jpg")
+        else:
+            print(f"   ⚠️ Картинка не найдена для {name}")
 
     print("\n" + "="*50)
     print("🎉 Демо-данные успешно загружены!")
