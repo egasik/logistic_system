@@ -71,14 +71,13 @@ def catalog(request):
 def product_detail(request, product_slug):
     """Страница товара"""
     product = get_object_or_404(Product, slug=product_slug, is_active=True)
-    image_path = None
-    # Keep compatibility with legacy DB where image is a column on core_product.
-    with connection.cursor() as cursor:
-        cursor.execute("SELECT image FROM core_product WHERE id = %s", [product.id])
-        row = cursor.fetchone()
-    if row and row[0]:
-        image_path = row[0]
-    return render(request, 'core/product_detail.html', {'product': product, 'image_path': image_path})
+    # Получаем только объекты ProductImage (с полем path как FileField)
+    images = product.images.all().order_by('sort_order', 'id')
+    
+    return render(request, 'core/product_detail.html', {
+        'product': product, 
+        'images': images
+    })
 
 # =============================================================================
 # 🛒 КОРЗИНА
