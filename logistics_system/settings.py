@@ -76,10 +76,10 @@ WSGI_APPLICATION = 'logistics_system.wsgi.application'
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
-        "NAME": os.getenv("MYSQL_DB", "logistics_db_new"),
-        "USER": os.getenv("MYSQL_USER", "root"),
-        "PASSWORD": os.getenv("MYSQL_PASSWORD", ""),
-        "HOST": os.getenv("MYSQL_HOST", "localhost"),
+        "NAME": os.getenv("MYSQL_DB", "23009_logistics_db_new"),
+        "USER": os.getenv("MYSQL_USER", "23009"),
+        "PASSWORD": os.getenv("MYSQL_PASSWORD", "bfnqxt"),
+        "HOST": os.getenv("MYSQL_HOST", "web.edu"),
         "PORT": os.getenv("MYSQL_PORT", "3306"),
         "OPTIONS": {
             "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
