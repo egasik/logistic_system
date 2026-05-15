@@ -72,30 +72,21 @@ WSGI_APPLICATION = 'logistics_system.wsgi.application'
 
 
 # Database
-# Default: SQLite (local development).
-# MySQL configuration commented for future use.
+# MySQL configuration
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": os.getenv("MYSQL_DB", "logistics_db_new"),
+        "USER": os.getenv("MYSQL_USER", "root"),
+        "PASSWORD": os.getenv("MYSQL_PASSWORD", ""),
+        "HOST": os.getenv("MYSQL_HOST", "localhost"),
+        "PORT": os.getenv("MYSQL_PORT", "3306"),
+        "OPTIONS": {
+            "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
+            "charset": "utf8mb4",
+        },
     }
 }
-
-# MySQL configuration (commented for future use)
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.mysql",
-#         "NAME": os.getenv("MYSQL_DB", "logistics_db_new"),
-#         "USER": os.getenv("MYSQL_USER", "root"),
-#         "PASSWORD": os.getenv("MYSQL_PASSWORD", ""),
-#         "HOST": os.getenv("MYSQL_HOST", "localhost"),
-#         "PORT": os.getenv("MYSQL_PORT", "3306"),
-#         "OPTIONS": {
-#             "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
-#             "charset": "utf8mb4",
-#         },
-#     }
-# }
 
 
 # Password validation
