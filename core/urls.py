@@ -16,4 +16,8 @@ urlpatterns = [
     path('register/', views.register_view, name='register'),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
+    path('admin/dashboard/', views.admin_dashboard, name='admin_dashboard'),
+    path('admin/reports/', views.admin_reports, name='admin_reports'), 
+    path('reports/', views.admin_reports, name='admin_reports'),
+    path('reports/pdf/', views.admin_reports_pdf, name='admin_reports_pdf'),
 ]

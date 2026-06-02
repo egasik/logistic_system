@@ -1,0 +1,118 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Отчёты по заказам — LogisticsPro{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>📊 Отчёты по совершённым заказам</h2>
+    <a href="{% url 'catalog' %}" class="btn btn-outline-secondary">← Назад к каталогу</a>
+</div>
+
+<!-- Форма фильтрации -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-light fw-bold">Фильтры отчёта</div>
+    <div class="card-body">
+        <form method="get" action="{% url 'admin_reports' %}" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label small text-muted">Дата от</label>
+                <input type="date" name="date_from" class="form-control" value="{{ date_from }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small text-muted">Дата до</label>
+                <input type="date" name="date_to" class="form-control" value="{{ date_to }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small text-muted">Категория товара</label>
+                <select name="category" class="form-select">
+                    <option value="">Все категории</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat.id }}" {% if category_id == cat.id|stringformat:"s" %}selected{% endif %}>
+                            {{ cat.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small text-muted">Сумма заказа (от - до)</label>
+                <div class="input-group">
+                    <input type="number" name="price_min" class="form-control" placeholder="От" value="{{ price_min }}">
+                    <input type="number" name="price_max" class="form-control" placeholder="До" value="{{ price_max }}">
+                </div>
+            </div>
+            <div class="col-12 text-end">
+                <a href="{% url 'admin_reports_pdf' %}?{{ request.GET.urlencode }}" class="btn btn-danger me-2" target="_blank">
+    <i class="bi bi-file-earmark-pdf"></i> Скачать PDF </a>
+                <a href="{% url 'admin_reports' %}" class="btn btn-outline-secondary me-2">Сбросить</a>
+                <button type="submit" class="btn btn-primary">Применить фильтры</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Сводные карточки -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card bg-primary text-white shadow-sm h-100">
+            <div class="card-body text-center">
+                <h5 class="card-title">Всего совершённых заказов</h5>
+                <h2 class="display-4 fw-bold">{{ total_count }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card bg-success text-white shadow-sm h-100">
+            <div class="card-body text-center">
+                <h5 class="card-title">Общая выручка</h5>
+                <h2 class="display-4 fw-bold">{{ total_revenue|floatformat:2 }} ₽</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Таблица результатов -->
+<div class="card shadow-sm">
+    <div class="card-header fw-bold">Детализация заказов (по выбранным фильтрам)</div>
+    <div class="card-body p-0">
+        {% if orders %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>№ Заявки</th>
+                        <th>Дата</th>
+                        <th>Клиент</th>
+                        <th>Категории в заказе</th>
+                        <th class="text-end">Сумма</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    <tr>
+                        <td><a href="{% url 'order_detail' order.id %}" class="text-decoration-none">#{{ order.id }}</a></td>
+                        <td>{{ order.created_at|date:"d.m.Y H:i" }}</td>
+                        <td>{{ order.customer_name }}</td>
+                        <td>
+                            {% with order.items.all as items %}
+                                {% for item in items %}
+                                    {% if item.product and item.product.category %}
+                                        <span class="badge bg-secondary me-1">{{ item.product.category.name }}</span>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endwith %}
+                        </td>
+                        <td class="text-end fw-bold">{{ order.total }} ₽</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-inbox display-4"></i>
+            <p class="mt-3">По выбранным фильтрам заказы не найдены</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

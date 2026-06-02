@@ -16,72 +16,68 @@
 <body>
 
     <!-- Навигация -->
-    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="{% url 'catalog' %}">
-                Logistics<span>Pro</span>
-            </a>
+            <a class="navbar-brand" href="{% url 'catalog' %}">LogisticsPro</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+                
+                <!-- Левая часть меню -->
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'catalog' %}">Каталог товаров</a>
+                        <a class="nav-link" href="{% url 'catalog' %}">Каталог</a>
                     </li>
                     {% if user.is_authenticated %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'cart' %}">
-                            Корзина 
-                            {% if request.session.cart %}
-                                <span class="badge rounded-pill" style="background: var(--color-2); color: var(--color-5);">
-                                    {{ request.session.cart|length }}
-                                </span>
-                            {% endif %}
-                        </a>
+                        <a class="nav-link" href="{% url 'cart' %}">Корзина</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'orders_list' %}">Мои заказы</a>
+                        <a class="nav-link" href="{% url 'orders_list' %}">Мои заявки</a>
                     </li>
                     {% endif %}
                 </ul>
                 
-                <!-- Правая часть навигации -->
+                <!-- Правая часть меню (ВАШ ОРИГИНАЛЬНЫЙ СТИЛЬ С DROPDOWN) -->
                 <ul class="navbar-nav">
                     {% if user.is_authenticated %}
                         <li class="nav-item dropdown">
-                            <!-- Замени старый блок профиля на этот -->
-                            <div class="dropdown">
-                                <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" role="button" data-bs-toggle="dropdown">
-                                    {% if request.user.profile.avatar %}
-                                        <img src="{{ request.user.profile.avatar.url }}" class="rounded-circle" style="width: 32px; height: 32px; object-fit: cover;">
-                                    {% else %}
-                                        <span class="bg-light text-primary rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px; font-weight: bold;">
-                {% if request.user.first_name %}
-                    {{ request.user.first_name|first|upper }}
-                {% elif request.user.email %}
-                    {{ request.user.email|first|upper }}
-                {% else %}
-                    ?
-                {% endif %}
-            </span>
-        {% endif %}
-        
-        <!-- Отображаем имя или email -->
-        <span class="d-none d-md-inline">
-            {{ request.user.get_full_name|default:request.user.email|truncatechars:15 }}
-        </span>
-                                </a>
-                                <ul class="dropdown-menu dropdown-menu-end shadow">
-                                    <li><a class="dropdown-item" href="{% url 'profile' %}"><i class="bi bi-person-gear"></i> Профиль</a></li>
-                                    
-                                    {% if user.is_staff %}
-                                    <li><a class="dropdown-item" href="/admin/"><i class="bi bi-shield-lock"></i> Админ панель</a></li>
-                                    {% endif %}
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item text-danger" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right"></i> Выйти</a></li>
-                                </ul>
-                            </div>
+                            <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" role="button" data-bs-toggle="dropdown">
+                                {% if request.user.profile.avatar %}
+                                    <img src="{{ request.user.profile.avatar.url }}" class="rounded-circle" style="width: 32px; height: 32px; object-fit: cover;">
+                                {% else %}
+                                    <span class="bg-light text-primary rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px; font-weight: bold;">
+                                        {% if request.user.first_name %}
+                                            {{ request.user.first_name|first|upper }}
+                                        {% elif request.user.email %}
+                                            {{ request.user.email|first|upper }}
+                                        {% else %}
+                                            ?
+                                        {% endif %}
+                                    </span>
+                                {% endif %}
+                                
+                                <!-- Отображаем имя или email -->
+                                <span class="d-none d-md-inline">
+                                    {{ request.user.get_full_name|default:request.user.email|truncatechars:15 }}
+                                </span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end shadow">
+                                <li><a class="dropdown-item" href="{% url 'profile' %}"><i class="bi bi-person-gear"></i> Профиль</a></li>
+                                
+                                <!-- 🔹 НОВАЯ КНОПКА: Только для администратора -->
+                                {% if user.is_admin or user.is_superuser %}
+                                <li><a class="dropdown-item " href="{% url 'admin_reports' %}"><i class="bi bi-graph-up"></i> Отчёты</a></li>
+                                {% endif %}
+                                
+                                {% if user.is_staff %}
+                                <li><a class="dropdown-item" href="/admin/"><i class="bi bi-shield-lock"></i> Админ панель</a></li>
+                                {% endif %}
+                                
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right"></i> Выйти</a></li>
+                            </ul>
                         </li>
                     {% else %}
                         <li class="nav-item">
@@ -98,8 +94,8 @@
         </div>
     </nav>
 
-    <!-- Основной контент -->
-    <main class="container mt-5 pt-4">
+    <!-- Основной контент (строго ваш вариант) -->
+        <main class="container py-4">
         {% if messages %}
             {% for message in messages %}
                 <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert" 
@@ -114,7 +110,7 @@
         {% endblock %}
     </main>
 
-    <!-- Footer -->
+    <!-- Footer (строго ваш вариант) -->
     <footer class="mt-auto">
         <div class="container text-center">
             <div class="row">
