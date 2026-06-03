@@ -5,45 +5,43 @@
 
 {% block content %}
 <div class="product-detail-page">
-    <div class="row g-5">
-        <!-- Фото товара -->
+    <div class="row g-5">  <!-- ← ВОТ ЭТО БЫЛО ПОТЕРЯНО: контейнер сетки -->
+        
+        <!-- Левая колонка: фото товара -->
         <div class="col-lg-6">
             <div class="card shadow-sm border-0">
-                {% if images %}
-                    <!-- Основное изображение -->
-                    <div id="mainImage" class="mb-3">
-                        <img src="{{ images.first.path.url }}" 
-                             class="card-img-top" 
+                {% if product.image %}
+                    <div id="mainImage" style="width: 100%; height: 450px; overflow: hidden; background-color: #f8f9fa;">
+                        <img src="{{ product.image.url }}" 
+                             class="w-100 h-100" 
                              alt="{{ product.name }}"
-                             style="height: 500px; object-fit: cover; cursor: pointer;">
+                             style="object-fit: cover; width: 100%; height: 100%;">
                     </div>
-                    
-                    <!-- Миниатюры (если изображений больше 1) -->
-                    {% if images.count > 1 %}
-                    <div class="row g-2">
-                        {% for image in images %}
-                        <div class="col-3">
-                            <img src="{{ image.path.url }}" 
-                                 alt="{{ product.name }} {{ forloop.counter }}"
-                                 class="img-thumbnail"
-                                 style="height: 80px; object-fit: cover; cursor: pointer;"
-                                 onclick="changeMainImage('{{ image.path.url }}')">
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
                 {% else %}
-                    <img src="{% static 'img/no-image.png' %}" 
-                         class="card-img-top" 
-                         alt="{{ product.name }}" 
-                         style="height: 500px; object-fit: cover;">
+                    <div style="width: 100%; height: 450px; background-color: #f8f9fa;" class="d-flex align-items-center justify-content-center">
+                        <img src="{% static 'img/no-image.png' %}" alt="Нет фото" style="max-height: 100%; max-width: 100%; object-fit: contain;">
+                    </div>
                 {% endif %}
             </div>
+            
+            <!-- Миниатюры -->
+            {% if images.count > 0 %}
+            <div class="row g-2 mt-2">
+                {% for image in images %}
+                <div class="col-3">
+                    <img src="{{ image.path.url }}" 
+                         class="img-thumbnail w-100"
+                         style="height: 70px; object-fit: cover; cursor: pointer;"
+                         onclick="changeMainImage('{{ image.path.url }}')">
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
         </div>
 
-        <!-- Детали товара -->
+        <!-- Правая колонка: детали товара -->
         <div class="col-lg-6">
-            <div class="card shadow-sm border-0">
+            <div class="card shadow-sm border-0 h-100">
                 <div class="card-body p-4 p-md-5">
                     {% if product.category %}
                     <span class="badge bg-secondary mb-3">{{ product.category.name }}</span>
@@ -69,7 +67,7 @@
                         {% csrf_token %}
                         <div class="d-flex gap-3">
                             <button type="submit" class="btn btn-primary btn-lg flex-grow-1">
-                                🛒 Добавить в заявку
+                                 Добавить в заявку
                             </button>
                         </div>
                     </form>
@@ -101,8 +99,9 @@
                 </a>
             </div>
         </div>
-    </div>
-</div>
+        
+    </div>  <!-- ← Закрывает .row -->
+</div>  <!-- ← Закрывает .product-detail-page -->
 
 <!-- Скрипт для смены основного изображения -->
 <script>

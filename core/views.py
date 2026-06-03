@@ -76,12 +76,11 @@ def catalog(request):
 def product_detail(request, product_slug):
     """Страница товара"""
     product = get_object_or_404(Product, slug=product_slug, is_active=True)
-    # Получаем только объекты ProductImage (с полем path как FileField)
     images = product.images.all().order_by('sort_order', 'id')
     
     return render(request, 'core/product_detail.html', {
-        'product': product, 
-        'images': images
+        'product': product,
+        'images': images  # ← Обязательно должно быть!
     })
 
 # =============================================================================
